@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kimi K3 技术报告 · 说人话版（长读）</title>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--ink:#eaf0ff;--sub:#93a0bd;
+    --bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.13);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:#04060c;color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .page{max-width:460px;margin:0 auto;position:relative;overflow:hidden;
+    background:
+      radial-gradient(600px 400px at 85% 3%,rgba(110,168,255,.26),transparent 60%),
+      radial-gradient(520px 400px at 0% 55%,rgba(167,139,255,.20),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0) 42%,#050710);}
+  section{padding:52px 28px;position:relative;}
+  .reveal{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.2,.8,.2,1);}
+  .reveal.in{opacity:1;transform:none;}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;letter-spacing:3px;color:var(--sub);margin-bottom:18px;}
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc);}
+  .hero{padding-top:70px;padding-bottom:44px;min-height:90vh;display:flex;flex-direction:column;justify-content:center;}
+  .hero h1{font-size:44px;line-height:1.16;font-weight:800;letter-spacing:1px;}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .grad2{background:linear-gradient(100deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .acc{color:var(--acc);}.cy{color:var(--cy);}.gold{color:var(--gold);}
+  .hero .tagline{margin-top:20px;font-size:16px;color:var(--sub);line-height:1.9;}
+  .hero .who{margin-top:26px;font-size:13px;letter-spacing:2px;color:var(--cy);}
+  .scroll{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--sub);letter-spacing:2px;animation:bob 1.8s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);opacity:.6;}50%{transform:translateX(-50%) translateY(6px);opacity:1;}}
+  h2{font-size:28px;line-height:1.3;font-weight:800;letter-spacing:.5px;margin-bottom:8px;}
+  .lead{font-size:15.5px;color:var(--sub);line-height:1.95;margin-top:14px;}
+  .lead b{color:var(--gold);}
+  .kicker{font-size:15px;color:var(--acc);font-weight:700;letter-spacing:1px;margin-top:14px;}
+  .quote{font-size:24px;line-height:1.55;font-weight:700;letter-spacing:.5px;}
+  .quote .m{color:var(--acc);font-size:1.3em;line-height:0;}
+  .sign{margin-top:20px;font-size:13px;color:var(--sub);letter-spacing:1px;}
+  .stat{border-left:3px solid var(--acc);padding:4px 0 4px 16px;margin-top:22px;}
+  .stat .n{font-size:48px;font-weight:800;line-height:1;background:linear-gradient(120deg,#fff,var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .stat .l{font-size:14px;color:var(--sub);margin-top:8px;line-height:1.6;}
+  .proof{display:flex;flex-direction:column;gap:13px;margin-top:22px;}
+  .proof .p{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px;font-size:14.5px;line-height:1.75;}
+  .proof .p b{color:var(--gold);}
+  .proof .p .t{color:var(--cy);font-weight:700;display:block;margin-bottom:4px;letter-spacing:.5px;}
+  .tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px;}
+  .tags span{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:13.5px;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px;}
+  .two .c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 14px;}
+  .two .c .n{font-size:34px;font-weight:800;background:linear-gradient(120deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;}
+  .two .c .l{font-size:13px;color:var(--sub);margin-top:8px;line-height:1.5;}
+  .cta{background:linear-gradient(160deg,rgba(110,168,255,.20),rgba(167,139,255,.14));text-align:center;padding:60px 28px 40px;}
+  .cta h2{font-size:30px;}
+  .cta .link{margin-top:20px;font-size:15px;color:var(--cy);word-break:break-all;}
+  footer{padding:26px;text-align:center;font-size:12px;color:var(--sub);letter-spacing:1px;border-top:1px solid var(--line);line-height:1.8;}
+  footer b{color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <section class="hero">
+    <div class="eyebrow reveal"><span class="dot"></span>Moonshot AI · arXiv:2607.24653v1 · 2026-07-27</div>
+    <h1 class="reveal">Kimi K3<br>技术报告<br><span class="grad">说人话版</span></h1>
+    <div class="tagline reveal">2.8 万亿参数 MoE · 激活 1040 亿<br>原生视觉 · 100 万 token 上下文<br>整篇报告，一口气读懂。</div>
+    <div class="who reveal">导读 · 刘思远 Leo</div>
+    <div class="scroll">向下滑 ↓</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>K3 到底是什么</div>
+    <div class="quote reveal"><span class="m">"</span>把预训练底座扩到 <span class="grad2">3T 级参数</span>，同时在 <span class="grad">100 万上下文</span>上扩展推理和长程交互——两条扩展轴一起推向前沿。<span class="m">"</span></div>
+    <div class="sign reveal">整体落后最强闭源（Claude Fable 5 / GPT-5.6 Sol），但稳定领先其余所有开源与闭源模型。而且——权重全开源。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>一句话看懂设计</div>
+    <h2 class="reveal">沿三个方向<br><span class="grad">扩展信息流动</span></h2>
+    <div class="proof">
+      <div class="p reveal"><span class="t">序列长度 · KDA</span>Kimi Delta Attention 做高效长序列混合，周期性穿插 Gated MLA 保住全局交互。</div>
+      <div class="p reveal"><span class="t">网络深度 · AttnRes</span>注意力残差，让每一层都能<b>选择性地回看此前所有层</b>的表征，信息不再只能逐层往上传。</div>
+      <div class="p reveal"><span class="t">模型宽度 · LatentMoE</span>896 个路由专家、每 token 只激活 16 个，在紧凑潜空间里算，稀疏度 56。</div>
+    </div>
+    <div class="lead reveal">三招合起来，相比 Kimi K2，整体扩展效率提升约 <b>2.5 倍</b>。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>架构长什么样</div>
+    <h2 class="reveal">3×KDA + 1×MLA<br><span class="grad">逐 block 堆</span></h2>
+    <div class="lead reveal">每个 block 是「3 个 KDA 层 + 1 个 Gated MLA 层」，一路重复到底，末尾再补一个 MLA 保证最后一层做全局注意力。每个注意力层都挂一个 Stable LatentMoE 前馈网络。输入端有一条<b>原生视觉通路</b>：MoonViT-V2 编码图像/视频，投影器送进共享 embedding。优化器用 <b>Per-Head Muon</b>，逐头正交化让各注意力头学习更均衡。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>token 混合 · KDA</div>
+    <h2 class="reveal">线性注意力，<br><span class="grad">但更稳更快</span></h2>
+    <div class="lead reveal">KDA 用一个<b>缩放 sigmoid</b> 给对数衰减设了下界（gmin=−5），保留因子不会掉到没边。好处很实在：有限的衰减范围让对角、非对角块都能走<b>稠密 Tensor Core 矩阵乘</b>，省掉了单独的对角计算路径。输出门也从低秩升级成输入相关的<b>全秩投影</b>。位置信息由 KDA 的递推门控隐式编码（NoPE），所以不用改 RoPE 就能直接外推到 100 万 token。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>layer 混合 · AttnRes</div>
+    <h2 class="reveal">让深层<br><span class="grad">看得见浅层</span></h2>
+    <div class="lead reveal">普通网络里，信息只能一层层往上传，深了就容易糊。AttnRes 用可学习的伪查询，对 embedding 和此前各 block 的输出算注意力权重，<b>每一层都能选择性读取历史层</b>。为了不爆显存，做了<b>分块</b>：把层分成 N 个 block，只在 block 级表征上做完整注意力，开销从 O(Ld) 降到 O(Nd)。K3 分成 8 个 block、每 12 层，N≈8 就能拿回大部分收益。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>channel 混合 · Stable LatentMoE</div>
+    <h2 class="reveal">896 个专家，<br><span class="grad">只叫醒 16 个</span></h2>
+    <div class="stat reveal"><div class="n">896 → 16</div><div class="l">路由专家总数 → 每 token 激活数，稀疏度 56，另有 2 个全宽共享专家</div></div>
+    <div class="lead reveal">专家们在一个<b>紧凑潜空间</b>里算（宽度 ℓ），聚合后加 RMSNorm 稳住尺度。激活函数换成 <b>SiTU-GLU</b>（β1=4/β2=25），给门和上分支都做平滑封顶，既留住局部响应又不让数值炸。负载均衡用 <b>Quantile Balancing</b>，无辅助损失，靠专家偏置调派发，不动混合权重。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>原生视觉 · MoonViT-V2</div>
+    <h2 class="reveal">视觉编码器<br><span class="grad">从零训，不抄 SigLIP</span></h2>
+    <div class="lead reveal">以前（包括 K2.5）都拿 SigLIP 这类对比预训练模型来初始化视觉编码器，图个起跑优势。K3 反着来：<b>从零用 next-token prediction 训</b>。原因是稳定性——SigLIP 初始化接进 LLM 联合优化时梯度老尖峰，从零训的 MoonViT-V2 全程稳，而且<b>效果追平 SigLIP 基线</b>，那就没必要背这个包袱。</div>
+    <div class="lead reveal">编码器是 27 层 ViT、约 <b>0.4B</b>，RMSNorm、去掉所有偏置；图像视频共享参数，注意力拆成帧内空间 + 帧间时间两趟。投影前用 <b>2×2 pixel-shuffle</b> 把视觉 token 砍到 1/4，3584×3584 的大图在 1M 上下文里也吃得下。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>预训练</div>
+    <h2 class="reveal">原生多模态 +<br><span class="grad">渐进长上下文</span></h2>
+    <div class="lead reveal">语言和视觉<b>从第一步就一起训</b>，图文 token 在同一个 next-token prediction 目标里交错，不搞事后对齐。上下文长度按课程<b>渐进扩</b>：预训练阶段 8K→64K，冷却阶段 256K→1M，把最烧钱的超长序列计算压在一小段预算里，既省又能逐步学会远程依赖。专门做了扩展律研究重调超参，OOD 验证坐实了 2.5× 效率。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>后训练</div>
+    <h2 class="reveal">冷启 → 三域 RL<br><span class="grad">→ 多教师蒸馏</span></h2>
+    <div class="lead reveal">SFT 先用领域专精模型合成轨迹、多阶段校验做冷启动，全程用 XTML 模板序列化复杂智能体轨迹；从 SFT 起就上 <b>QAT</b>（权重 MXFP4 / 激活 MXFP8）。然后在<b>通用 / 智能体 / 代码</b>三大领域做 RL，横跨多个推理强度档，训练「推理→行动→观察→验证→适应」这个通用循环，常常跨几百上千次工具调用、累计几百万 token。最后用<b>多教师在策略蒸馏</b>把各路专精策略并进一个统一模型。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>智能体 RL 环境</div>
+    <h2 class="reveal">白盒 harness，<br><span class="grad">不给单一脚手架惯坏</span></h2>
+    <div class="lead reveal">只用一套固定 harness 训，模型会过拟合到某种工具 schema 和交互习惯。K3 把 harness 拆成可配置、可组合的模块——工具接口、系统提示、上下文管理、技能、记忆、子智能体，能拼出主流 harness、也能拼出全新的。RL 时按任务动态换配置，逼模型见足够多样的组合。</div>
+    <div class="tags reveal">
+      <span>Kimi Code</span><span>Claude Code</span><span>Codex</span><span>OpenClaw</span><span>Hermes</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>基础设施</div>
+    <h2 class="reveal">撑起 2.8T 的<br><span class="grad">系统硬功夫</span></h2>
+    <div class="proof">
+      <div class="p reveal"><span class="t">KDA 协同设计</span>FlashKDA（CUTLASS chunkwise kernel）+ KDA 上下文并行（KCP），把新注意力算子榨到底。</div>
+      <div class="p reveal"><span class="t">并行 & 显存</span>MoonEP 完美均衡专家并行 + Pipeline ZeRO-2 + P2P Muon 正交化。</div>
+      <div class="p reveal"><span class="t">百万 token Agent RL</span>AgentENV 用 Firecracker microVM 沙箱，133ms 存档 / 49ms 恢复，累计跑了 5100 万+ 个沙箱。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>战绩（思考强度拉满）</div>
+    <h2 class="reveal">长程代码 & 智能体<br><span class="grad">多项第一</span></h2>
+    <div class="two">
+      <div class="c reveal"><div class="n">91.2</div><div class="l">BrowseComp（第一）</div></div>
+      <div class="c reveal"><div class="n">86.6</div><div class="l">SWE-Marathon（第一）</div></div>
+      <div class="c reveal"><div class="n">88.8</div><div class="l">ProgramBench（第一）</div></div>
+      <div class="c reveal"><div class="n">30.8</div><div class="l">AutomationBench（第一）</div></div>
+    </div>
+    <div class="lead reveal">Terminal-Bench 2.1 拿 70.0，紧咬 GPT-5.6 Sol（73.0）。整体：追最强闭源、压其余所有。</div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>视觉 · 智能体式推理</div>
+    <h2 class="reveal">让模型<br><span class="grad">写代码去看图</span></h2>
+    <div class="lead reveal">遇到看不清的图，模型在沙箱里<b>自己写 Python</b> 去裁剪、放大、变换，再看处理后的结果继续推理——等于给视觉配了双「可操作的眼睛」。</div>
+    <div class="two">
+      <div class="c reveal"><div class="n">97.8</div><div class="l">Math-Vision（带 Python）<br>从 94.3 提升</div></div>
+      <div class="c reveal"><div class="n">41.0</div><div class="l">ZeroBench（带 Python）<br>从 23.0 提升</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow reveal"><span class="dot"></span>案例研究</div>
+    <h2 class="reveal">不只是刷分，<br><span class="grad">真做工程</span></h2>
+    <div class="proof">
+      <div class="p reveal"><span class="t">GPU kernel 优化</span>自主定位并重写 AttnRes kernel，<b>283.6ms → 114.4ms</b>。</div>
+      <div class="p reveal"><span class="t">MiniTriton</span>从零实现一个编译器——典型的长程代码任务。</div>
+      <div class="p reveal"><span class="t">nano-kpu</span>参与芯片设计，跨越数百到数千次工具调用的长程执行。</div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="eyebrow reveal" style="justify-content:center"><span class="dot"></span>结论</div>
+    <h2 class="reveal">开放一个<br><span class="grad">新的前沿</span></h2>
+    <div class="lead reveal" style="text-align:center">2.8T 原生多模态 MoE，把预训练规模与百万上下文两条扩展轴一起推向前沿，并<b>完整开放模型权重</b>，加速前沿智能的研究与部署。</div>
+    <div class="link reveal">huggingface.co/moonshotai/Kimi-K3</div>
+  </section>
+
+  <footer>导读 · <b>刘思远 Leo</b><br>原报告：Moonshot AI · Kimi Team · arXiv:2607.24653v1</footer>
+</div>
+
+<script>
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:.14});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
