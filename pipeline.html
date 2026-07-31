@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K3 图像训练数据流拆解 · 以一张胸片为例</title>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--warn:#ff9d66;--ink:#eaf0ff;--sub:#93a0bd;
+    --bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.13);--code:rgba(93,228,199,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(700px 500px at 88% 2%,rgba(110,168,255,.22),transparent 60%),
+      radial-gradient(600px 460px at 0% 60%,rgba(167,139,255,.18),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0) 45%,#050710);
+    color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:820px;margin:0 auto;padding:48px 22px 80px;}
+  .head{text-align:center;margin-bottom:14px;}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;letter-spacing:3px;color:var(--sub);margin-bottom:16px;}
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc);}
+  h1{font-size:clamp(26px,5vw,40px);line-height:1.2;font-weight:800;letter-spacing:.5px;}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sample{margin:22px auto 8px;max-width:640px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:15px;line-height:1.7;color:var(--sub);}
+  .sample b{color:var(--gold);}
+  .note{max-width:640px;margin:12px auto 32px;font-size:12.5px;color:var(--sub);line-height:1.7;text-align:center;}
+  .note .real{color:var(--cy);}.note .sim{color:var(--warn);}
+  .flow{position:relative;}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:0 auto;max-width:640px;position:relative;}
+  .step .no{position:absolute;left:-13px;top:18px;width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));
+    color:#04060c;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(110,168,255,.4);}
+  .step h3{font-size:17px;font-weight:800;letter-spacing:.5px;margin-bottom:4px;padding-left:6px;}
+  .step h3 .tag{font-size:12px;color:var(--acc);font-weight:600;letter-spacing:1px;margin-left:8px;}
+  .step .desc{font-size:14px;color:var(--sub);line-height:1.7;padding-left:6px;margin-top:6px;}
+  .step .desc b{color:var(--gold);}
+  .shape{font-family:'SF Mono','Menlo','Consolas',monospace;font-size:13.5px;background:var(--code);border:1px solid rgba(93,228,199,.22);
+    border-radius:9px;padding:10px 13px;margin:10px 0 2px 6px;color:var(--cy);overflow-x:auto;white-space:pre;line-height:1.6;}
+  .shape .hi{color:var(--gold);}.shape .dim{color:var(--sub);}
+  .arrow{height:30px;display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:20px;}
+  .arrow .lbl{font-size:11.5px;color:var(--sub);letter-spacing:1px;margin-left:8px;font-family:monospace;}
+  .step.key{border-color:rgba(244,213,141,.5);background:linear-gradient(160deg,rgba(244,213,141,.10),var(--card));}
+  .step.key .no{background:linear-gradient(135deg,var(--gold),var(--warn));}
+  /* token 序列可视化 */
+  .seq{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0 4px 6px;}
+  .tok{font-family:monospace;font-size:12px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);}
+  .tok.img{background:rgba(110,168,255,.12);border-color:rgba(110,168,255,.35);color:var(--acc);}
+  .tok.txt{background:rgba(93,228,199,.12);border-color:rgba(93,228,199,.35);color:var(--cy);}
+  .tok .l{display:block;font-size:9px;color:var(--sub);text-align:center;margin-top:3px;}
+  /* loss 概率条 */
+  .prob{margin:10px 0 2px 6px;}
+  .prob .row{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:13px;}
+  .prob .name{width:52px;font-family:monospace;color:var(--ink);}
+  .prob .track{flex:1;height:14px;background:rgba(255,255,255,.06);border-radius:7px;overflow:hidden;}
+  .prob .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--acc),var(--acc2));}
+  .prob .row.win .fill{background:linear-gradient(90deg,var(--gold),var(--warn));}
+  .prob .pct{width:48px;font-family:monospace;color:var(--sub);text-align:right;}
+  .lossline{margin-top:10px;padding-left:6px;font-family:monospace;font-size:13.5px;color:var(--gold);}
+  /* 回传 */
+  .grad-path{background:linear-gradient(160deg,rgba(167,139,255,.14),var(--card));border:1px solid rgba(167,139,255,.4);border-radius:16px;
+    padding:18px 20px;margin:0 auto;max-width:640px;}
+  .grad-path .p{font-family:monospace;font-size:12.5px;color:var(--acc2);line-height:1.9;word-break:break-word;}
+  .grad-path .k{font-size:14px;color:var(--sub);line-height:1.7;margin-top:8px;}
+  .grad-path .k b{color:var(--gold);}
+  .sys{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:640px;margin:0 auto;}
+  .sys .c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 15px;}
+  .sys .c .t{color:var(--cy);font-weight:700;font-size:14px;margin-bottom:6px;letter-spacing:.5px;}
+  .sys .c .d{font-size:13px;color:var(--sub);line-height:1.65;}
+  .sys .c .d b{color:var(--gold);}
+  .sec-t{max-width:640px;margin:38px auto 16px;font-size:14px;letter-spacing:2px;color:var(--sub);border-top:1px dashed var(--line);padding-top:20px;}
+  .tldr{max-width:640px;margin:34px auto 0;background:linear-gradient(160deg,rgba(110,168,255,.16),rgba(167,139,255,.10));
+    border:1px solid var(--line);border-radius:16px;padding:20px 22px;font-size:14.5px;line-height:1.9;}
+  .tldr b{color:var(--gold);}
+  footer{max-width:640px;margin:30px auto 0;text-align:center;font-size:12px;color:var(--sub);letter-spacing:1px;line-height:1.8;border-top:1px solid var(--line);padding-top:22px;}
+  footer b{color:var(--acc);}
+  @media(max-width:520px){.sys{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="eyebrow"><span class="dot"></span>Kimi K3 · 原生多模态视觉训练</div>
+    <h1>图像训练数据流拆解<br><span class="grad">以一张胸片为例</span></h1>
+  </div>
+
+  <div class="sample">
+    <b>实例样本</b>：一张 <b>896×896</b> 的胸部 X 光片，配一句标注文字「双肺纹理增多」。<br>
+    训练目标：给定这张片子，让模型逐字预测出「双肺纹理增多」——没有任何单独的视觉标签。
+  </div>
+  <div class="note">
+    <span class="real">■ 报告真实设定</span>：token 数关系、pixel-shuffle 压到 1/4、27 层、最大 3584×3584、从零 NTP 训练。
+    <span class="sim">■ 示意值</span>：patch=14×14、ViT 维=1152、主干维=7168（报告未直接给出，仅为把数字走通）。
+  </div>
+
+  <div class="flow">
+
+    <div class="step"><div class="no">1</div>
+      <h3>原图 → 张量</h3>
+      <div class="shape">[<span class="hi">896</span>, <span class="hi">896</span>, 3]   <span class="dim"># 高 × 宽 × RGB</span></div>
+    </div>
+    <div class="arrow">↓<span class="lbl">切成 14×14 的小方块</span></div>
+
+    <div class="step"><div class="no">2</div>
+      <h3>切 patch</h3>
+      <div class="desc">每边 896/14 = <b>64</b> 个，全图 64×64 = <b>4096</b> 个 patch；每个拉平 14×14×3 = 588 维。</div>
+      <div class="shape">[<span class="hi">4096</span>, 588]   <span class="dim"># 4096 个 patch</span></div>
+    </div>
+    <div class="arrow">↓<span class="lbl">linear projection</span></div>
+
+    <div class="step"><div class="no">3</div>
+      <h3>线性投影进 ViT</h3>
+      <div class="shape">[4096, 588] ─▶ [<span class="hi">4096</span>, 1152]   <span class="dim"># 4096 个视觉 token</span></div>
+    </div>
+    <div class="arrow">↓<span class="lbl">27 层空间注意力</span></div>
+
+    <div class="step"><div class="no">4</div>
+      <h3>MoonViT-V2 编码<span class="tag">27 层 · ~0.4B</span></h3>
+      <div class="desc">静态图只走「帧内空间注意力」一趟；视频才多走「帧间时间注意力」+ 时间池化。图像视频<b>共享参数</b>。</div>
+      <div class="shape">[4096, 1152] ─27层─▶ [<span class="hi">4096</span>, 1152]</div>
+    </div>
+    <div class="arrow">↓<span class="lbl">2×2 pixel-shuffle</span></div>
+
+    <div class="step key"><div class="no">5</div>
+      <h3>pixel-shuffle 2×2　<span class="tag" style="color:var(--gold)">关键：token 砍到 1/4</span></h3>
+      <div class="desc">相邻 2×2 的 4 个 token 合并成 1 个：token 数 ÷4，维度 ×4。这一步让大图"吃得下"1M 上下文。</div>
+      <div class="shape">[4096, 1152] ─▶ [<span class="hi">1024</span>, 4608]   <span class="dim"># 4096/4=1024, 1152×4=4608</span></div>
+    </div>
+    <div class="arrow">↓<span class="lbl">MLP projector</span></div>
+
+    <div class="step"><div class="no">6</div>
+      <h3>MLP 投影器 → 共享空间</h3>
+      <div class="desc">映射到和文字 token <b>同一维度、同一空间</b>——从此视觉和文字是"同一种货币"。</div>
+      <div class="shape">[1024, 4608] ─▶ [<span class="hi">1024</span>, 7168]   <span class="dim"># 这张胸片 = 1024 个 token</span></div>
+      <div class="desc" style="margin-top:8px">换成最大的 3584×3584：256×256=65536 patch → shuffle 后 <b>16384</b> token。</div>
+    </div>
+    <div class="arrow">↓<span class="lbl">和文字拼接</span></div>
+
+    <div class="step"><div class="no">7</div>
+      <h3>拼成一条序列</h3>
+      <div class="desc">「双肺纹理增多」= 6 个文字 token，接在 1024 个视觉 token 后面。图像 token <b>不算 loss</b>，但它们是"上文"。</div>
+      <div class="seq">
+        <span class="tok img">v₁<span class="l">图</span></span>
+        <span class="tok img">v₂<span class="l">图</span></span>
+        <span class="tok img">…<span class="l">…</span></span>
+        <span class="tok img">v₁₀₂₄<span class="l">图</span></span>
+        <span class="tok txt">双<span class="l">✓loss</span></span>
+        <span class="tok txt">肺<span class="l">✓loss</span></span>
+        <span class="tok txt">纹<span class="l">✓loss</span></span>
+        <span class="tok txt">理<span class="l">✓loss</span></span>
+        <span class="tok txt">增<span class="l">✓loss</span></span>
+        <span class="tok txt">多<span class="l">✓loss</span></span>
+      </div>
+    </div>
+    <div class="arrow">↓<span class="lbl">走到位置 1027，预测下一个字</span></div>
+
+    <div class="step"><div class="no">8</div>
+      <h3>预测 + 算 loss</h3>
+      <div class="desc">已看过 1024 图 + "双""肺"，预测第 1028 个字。真实答案 = <b>纹理</b>。</div>
+      <div class="prob">
+        <div class="row win"><span class="name">纹理</span><span class="track"><span class="fill" style="width:55%"></span></span><span class="pct">0.55</span></div>
+        <div class="row"><span class="name">炎症</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="pct">0.20</span></div>
+        <div class="row"><span class="name">结节</span><span class="track"><span class="fill" style="width:10%"></span></span><span class="pct">0.10</span></div>
+      </div>
+      <div class="lossline">loss = −log(0.55) ≈ 0.60</div>
+    </div>
+    <div class="arrow">↓<span class="lbl">反向传播</span></div>
+
+    <div class="grad-path">
+      <div class="no" style="position:static;display:inline-flex;margin-bottom:8px;background:linear-gradient(135deg,var(--acc2),var(--acc));">9</div>
+      <div class="p">文字预测 loss ─▶ 主干 ─▶ MLP 投影器 ─▶ pixel-shuffle ─▶ MoonViT-V2 (27 层)</div>
+      <div class="k">为了把「纹理」预测得更准，梯度会去调整<b>对应肺纹理区域的视觉 token（v₃₈₀、v₄₀₁…）</b>的编码。也就是——<b>"看懂肺纹理"是被"预测出'纹理'这个字"逼出来的</b>，全程没有单独的视觉标签。这就是原生 NTP 训练视觉的本质。</div>
+    </div>
+
+  </div>
+
+  <div class="sec-t">训练系统侧：这么多 token 怎么算得起</div>
+  <div class="sys">
+    <div class="c"><div class="t">动态上下文并行 CP</div><div class="d">3584 大图有 16384 token，单卡吃不下 → 沿 <b>patch 维切开</b>分到多卡，注意力时 <b>gather-KV</b> 收齐；多张大图再拆 sub-CP 组做负载均衡。</div></div>
+    <div class="c"><div class="t">编码器藏进流水线气泡</div><div class="d">主干流水线并行天然有空泡 → 沿用 K2.5 的 <b>DEP</b>，把 ViT 前向/反向拆碎塞进 interleaved-1F1B 的空泡里，额外耗时<b>基本抹平</b>。</div></div>
+  </div>
+
+  <div class="tldr">
+    <b>一句话记住</b>：896×896 → 4096 patch → 27 层编码 → shuffle 到 1024 token → 投影进主干 → 接 6 个文字 token → 在文字位置算 loss → 梯度回传，把"看懂肺纹理"教给视觉编码器。训练系统再用<b>动态 CP</b> 切大图、把编码器<b>藏进流水线气泡</b>扛住成本。
+  </div>
+
+  <footer>导读 · <b>刘思远 Leo</b><br>基于 Kimi K3 技术报告（Moonshot AI · arXiv:2607.24653v1）§2.4 / §3 / §5.2.3</footer>
+
+</div>
+</body>
+</html>
