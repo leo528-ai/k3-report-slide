@@ -486,9 +486,51 @@ recovery.json(0600) 存文本+sha256+match；REPORT.md <span class="a">只写</s
     <div class="sub">最省事的一条：<b class="gold">默认不开 extended thinking，就没有 signature，攻击面直接归零</b>——正是 §14 batch4 真实数据里 reasoning_tokens=0 的天然状态。</div>
   </section>
 
+  <!-- 26 合成仿真 正例 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§17.1 合成仿真示例 · 正例（真实计算）</div>
+    <h2>mock 跑通：<span class="grad">逐字还原两条合成秘密</span></h2>
+    <div class="sub">用 <span class="mono" style="display:inline;padding:1px 6px;">examples/mock_sidechannel_demo.py</span> 的带噪比较器（无真实模型）跑出的<b class="cy">真实数字</b>：</div>
+    <table class="tbl">
+      <tr><th>合成秘密</th><th>字母表</th><th>还原结果</th><th>exact_match</th><th>实测请求</th></tr>
+      <tr><td>3f0ac1d9b8e27f64</td><td>hex(16)</td><td><b>3f0ac1d9b8e27f64</b></td><td><b class="gold">True</b></td><td>384</td></tr>
+      <tr><td>meld</td><td>a–z(26)</td><td><b>meld</b></td><td><b class="gold">True</b></td><td>114</td></tr>
+    </table>
+    <div class="mono">前 3 位轨迹 (真值→还原, 该位请求数)：
+  ('3','3',24)  ('f','f',24)  ('0','0',24)
+理论上界 16×⌈log₂16⌉×3×2 = <span class="hi">384</span>  实测 384（<span class="dim">meld 因平票补对，114 略低于 120</span>）</div>
+    <div class="sub"><b class="warn">注意</b>：这是纯算法仿真，秘密是合成的、oracle 是高斯噪声比较器，<b class="cy">不涉及任何真实模型或加密状态</b>。</div>
+  </section>
+
+  <!-- 27 合成仿真 控制组 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§17.2 合成仿真示例 · 控制组（真实计算）</div>
+    <h2>移除 state → <span class="grad">还原退化为掷硬币</span></h2>
+    <table class="tbl">
+      <tr><th>条件</th><th>单判定正确率</th><th>平均 |D|</th><th>还原结果</th><th>exact_match</th></tr>
+      <tr><td>有 opaque state</td><td><b>1.000</b></td><td><b>≈ 3602</b></td><td>3f0ac1d9b8e27f64</td><td><b class="gold">True</b></td></tr>
+      <tr><td>移除 state（控制组）</td><td><b class="red">0.497</b></td><td>≈ 1885(噪声)</td><td>f2213245f6389791</td><td><b class="red">False</b></td></tr>
+    </table>
+    <div class="sub">状态缺席后正确率≈0.5、AUC≈0.5，还原出的是<b class="red">乱码</b>。这就是文档 §13.5 的论证在仿真里被复现：<b class="cy">能还原完全依赖 opaque state 被真实回灌</b>，不是提示词泄漏或猜测。</div>
+  </section>
+
+  <!-- 28 防御验证 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§17.3 防御验证示例 · 真实计算</div>
+    <h2>做对防御 → <span class="grad">信道当场死亡</span></h2>
+    <div class="sub"><span class="mono" style="display:inline;padding:1px 6px;">examples/defense_validation.py</span> 跑出的真实数字（正确率 0.5 = 信道死）：</div>
+    <table class="tbl">
+      <tr><th>防御动作</th><th>单判定正确率</th><th>平均 |D|</th><th>结论</th></tr>
+      <tr><td>无防御 baseline</td><td><b>1.000</b></td><td>3602.1</td><td>信道打通</td></tr>
+      <tr><td>长度归一化 / 定长填充</td><td><b class="gold">0.490</b></td><td>13.4</td><td><b class="cy">信道死亡</b></td></tr>
+      <tr><td>粗暴分桶（边界卡错）</td><td><b class="red">1.000</b></td><td>4000.0</td><td>没用</td></tr>
+    </table>
+    <div class="sub"><b class="warn">诚实结论</b>：长度归一化能把攻击者拿到的比特清零；但<b class="red">分桶做错</b>（桶边界正好落在长/短之间）等于没防。<b class="gold">防御要做对方向才有效。</b></div>
+  </section>
+
 </div>
 
-<div class="pageno"><b id="cur">1</b> / <span id="tot">25</span></div>
+<div class="pageno"><b id="cur">1</b> / <span id="tot">28</span></div>
 <div class="hud"><div class="dots" id="dots"></div></div>
 <div class="nav"><b id="prev">‹</b><b id="next">›</b></div>
 
