@@ -518,14 +518,16 @@ recovery.json(0600) 存文本+sha256+match；REPORT.md <span class="a">只写</s
   <section class="slide">
     <div class="eyebrow"><span class="dot"></span>§17.3 防御验证示例 · 真实计算</div>
     <h2>做对防御 → <span class="grad">信道当场死亡</span></h2>
-    <div class="sub"><span class="mono" style="display:inline;padding:1px 6px;">examples/defense_validation.py</span> 跑出的真实数字（正确率 0.5 = 信道死）：</div>
+    <div class="sub"><span class="mono" style="display:inline;padding:1px 6px;">examples/defense_validation.py</span> 跑出的真实数字（正确率 0.5 = 信道死）。对比<b class="cy">单次判定 @1</b> 与 <b class="cy">30 次投票 @30</b>：</div>
     <table class="tbl">
-      <tr><th>防御动作</th><th>单判定正确率</th><th>平均 |D|</th><th>结论</th></tr>
-      <tr><td>无防御 baseline</td><td><b>1.000</b></td><td>3602.1</td><td>信道打通</td></tr>
-      <tr><td>长度归一化 / 定长填充</td><td><b class="gold">0.490</b></td><td>13.4</td><td><b class="cy">信道死亡</b></td></tr>
-      <tr><td>粗暴分桶（边界卡错）</td><td><b class="red">1.000</b></td><td>4000.0</td><td>没用</td></tr>
+      <tr><th>防御动作</th><th>正确率 @1</th><th>正确率 @30</th><th>结论</th></tr>
+      <tr><td>无防御 baseline</td><td>1.000</td><td><b>1.000</b></td><td>信道打通</td></tr>
+      <tr><td>定长填充 / 长度归一化</td><td>0.488</td><td><b class="gold">0.492</b></td><td><b class="cy">信道死亡</b></td></tr>
+      <tr><td>随机填充（零均值噪声）</td><td>0.739</td><td><b class="red">0.996</b></td><td>被投票穿透</td></tr>
+      <tr><td>分桶 · 边界没选好</td><td>1.000</td><td><b class="red">1.000</b></td><td>等于没防</td></tr>
+      <tr><td>分桶 · 粗到吞掉两簇</td><td>0.511</td><td><b class="gold">0.505</b></td><td><b class="cy">信道死亡</b>（字段也废）</td></tr>
     </table>
-    <div class="sub"><b class="warn">诚实结论</b>：长度归一化能把攻击者拿到的比特清零；但<b class="red">分桶做错</b>（桶边界正好落在长/短之间）等于没防。<b class="gold">防御要做对方向才有效。</b></div>
+    <div class="sub"><b class="warn">三个反直觉结论</b>：① <b class="red">随机噪声不是防御</b>——@1 压到 0.739，但多发几次投票 @30 又爬回 0.996；② 分桶要粗到把两簇吞进同一个桶，Δ 才真正归零（但字段也没信息量了）；③ 最干净的是<b class="gold">从源头不 rehydrate 外来 state</b>，直接撤掉 oracle。详见 <span class="mono" style="display:inline;padding:1px 6px;">examples/DEFENSE.md</span>。</div>
   </section>
 
 </div>

@@ -8,6 +8,7 @@
 | `mock_sidechannel_demo.py` | 合成 canary 逐字还原（正例）+ 移除 state 的控制组 | 否（高斯噪声 oracle） |
 | `defense_validation.py` | 演示长度归一化/分桶如何把信道正确率打回 0.5 | 否 |
 | `blackbox_distillation.py` | 正经蒸馏：只采集 teacher 可见 input→output 轨迹 | 否（mock teacher，可换真实 provider） |
+| `DEFENSE.md` | 防御向解读：威胁模型 / 被滥用的 API 行为 / 检测 / 缓解 | 否（纯分析文档） |
 
 ## 边界说明
 
@@ -22,3 +23,5 @@ python3 examples/mock_sidechannel_demo.py
 python3 examples/defense_validation.py
 python3 examples/blackbox_distillation.py
 ```
+
+防御向解读见 `examples/DEFENSE.md`（威胁模型、被滥用的 API 行为、检测信号、按性价比排序的缓解清单，引用上述脚本的真实输出）。

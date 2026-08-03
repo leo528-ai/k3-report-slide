@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEFENSE · 长度旁路 & 加密推理状态解封 · 防御向解读</title>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--warn:#ff9d66;--red:#ff7b91;
+    --ink:#eaf0ff;--sub:#93a0bd;--bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.05);
+    --line:rgba(255,255,255,.12);--code:rgba(93,228,199,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(1200px 700px at 82% -10%,rgba(110,168,255,.18),transparent 60%),
+      radial-gradient(900px 600px at 8% 110%,rgba(167,139,255,.14),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0));
+    background-attachment:fixed;color:var(--ink);-webkit-font-smoothing:antialiased;
+    line-height:1.8;letter-spacing:.3px;padding:6vh 0 12vh;}
+  .wrap{max-width:960px;margin:0 auto;padding:0 6vw;}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;font-size:13px;letter-spacing:3px;color:var(--sub);margin-bottom:14px;}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc);}
+  h1{font-size:clamp(30px,5vw,52px);line-height:1.18;letter-spacing:1px;font-weight:800;margin-bottom:18px;}
+  h2{font-size:clamp(21px,3vw,32px);line-height:1.3;letter-spacing:1px;font-weight:800;
+    margin:52px 0 6px;padding-top:22px;border-top:1px solid var(--line);}
+  h2 .no{color:var(--acc);margin-right:10px;}
+  h3{font-size:clamp(16px,2vw,20px);font-weight:700;color:var(--cy);margin:26px 0 4px;letter-spacing:.5px;}
+  p{font-size:clamp(14px,1.7vw,18px);color:var(--ink);margin:12px 0;}
+  .sub{color:var(--sub);}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cy{color:var(--cy);}.gold{color:var(--gold);}.warn{color:var(--warn);}.red{color:var(--red);}.acc{color:var(--acc);}
+  b{color:var(--gold);}
+  .lead{font-size:clamp(15px,1.9vw,20px);color:var(--sub);line-height:1.85;
+    border-left:3px solid var(--acc);padding:6px 0 6px 20px;margin:20px 0 8px;}
+  ul,ol{margin:12px 0 12px 4px;padding-left:24px;}
+  li{font-size:clamp(14px,1.7vw,18px);margin:9px 0;line-height:1.7;}
+  li::marker{color:var(--acc);}
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:clamp(12.5px,1.5vw,16.5px);}
+  th,td{padding:10px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{color:var(--cy);font-weight:700;letter-spacing:1px;}
+  td:first-child{color:var(--sub);}
+  tbody tr:hover{background:rgba(255,255,255,.03);}
+  .mono{font-family:'SF Mono','Menlo','Consolas',monospace;background:var(--code);
+    border:1px solid rgba(93,228,199,.22);border-radius:7px;padding:1px 7px;color:var(--cy);font-size:.92em;}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:20px 0;backdrop-filter:blur(6px);}
+  .box.warnc{border-color:rgba(255,157,102,.42);background:linear-gradient(160deg,rgba(255,157,102,.08),var(--card));}
+  .box.redc{border-color:rgba(255,123,145,.42);background:linear-gradient(160deg,rgba(255,123,145,.08),var(--card));}
+  .box.cyc{border-color:rgba(93,228,199,.38);background:linear-gradient(160deg,rgba(93,228,199,.07),var(--card));}
+  .box .t{font-size:14px;letter-spacing:2px;margin-bottom:8px;font-weight:700;}
+  .foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);font-size:13px;color:var(--sub);letter-spacing:1px;}
+  .foot b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span>安全研究 · 防御向解读 · 纯合成仿真</div>
+  <h1>长度旁路 &amp; 加密推理状态解封<br><span class="grad">防御向解读</span></h1>
+
+  <div class="lead">本文只做<b>防御向分析</b>：解释「解封隐藏推理链」这类做法<b>利用了哪个 API 行为</b>、服务方/网关<b>怎么检测</b>、<b>怎么堵</b>。不提供任何针对真实模型的提取/解封实现，也不指导如何跑通攻击。可运行的部分全部是 <span class="mono">examples/</span> 里的<b>纯合成仿真</b>（带噪比较器 + 二分搜索），不碰真实模型、不联网、不处理任何 <span class="mono">signature</span>。</div>
+
+  <h2><span class="no">1.</span>威胁模型：两类要分开看</h2>
+  <table>
+    <tr><th></th><th>A. 长度旁路 length side-channel</th><th>B. 状态回放解封 signature replay</th></tr>
+    <tr><td>目标</td><td>从「新不透明状态的长度」里读出 1 比特（模型内部某个判定）</td><td>让 provider 把已封存的私有推理链<b>原文</b>吐出来</td></tr>
+    <tr><td>前提</td><td>服务方把「工作量」编码进了一个攻击者可测长度的载体</td><td>服务方允许把<b>外来 opaque state</b> 当 <span class="mono">assistant.thinking</span> 回填并解密</td></tr>
+    <tr><td>载体</td><td>opaque_state / usage 字段长度</td><td><span class="mono">thinking.signature</span>（AEAD 加密、绑定模型名的 protobuf 封套）</td></tr>
+    <tr><td>恢复方式</td><td>成对反转编码 + 差分 + 多次投票 + 二分搜索</td><td>把 signature 塞回新请求，诱导模型复述其「此前的推理」</td></tr>
+    <tr><td>合成演示</td><td><span class="mono">mock_sidechannel_demo.py</span></td><td>不提供实现（见 §5）</td></tr>
+  </table>
+  <div class="box cyc"><div class="t cy">共同根因</div>两类的根因是同一句话：<b>服务方替攻击者把本该私有的信息，搬到了攻击者能观测/能回填的位置。</b> 防御也落在同一句话的反面。</div>
+
+  <h2><span class="no">2.</span>B 类利用的确切 API 行为</h2>
+  <p>参照公开复现物 README 自述的流程，它并不「破解密码」，而是<b>借道 provider 自己的解密</b>：</p>
+  <ol>
+    <li><b>采集 harvest</b>：发一次开启 extended thinking 的普通请求，响应里带回一个 <span class="mono">thinking</span> 块，内含不透明 <span class="mono">signature</span>（被封存的推理）。明文推理不离开 provider。</li>
+    <li><b>回放 replay / unseal</b>：把这个 signature 作为 <span class="mono">assistant.thinking</span> 块塞进一个<b>新请求</b>，再让模型复述它「此前的私有推理」。provider 在服务端解密封套，模型把内容 surface 出来。</li>
+  </ol>
+  <p class="sub">防御方要盯的关键点：</p>
+  <ul>
+    <li>signature <b>从不是顶层字段</b>，永远藏在某个 <span class="mono">thinking</span> 内容块里——网关按顶层字段过滤会漏。</li>
+    <li>它<b>绑定模型名</b>：回放必须用匹配模型才能过 AEAD 完整性校验。这既是攻击约束，也是防御抓手（见 §4）。</li>
+    <li>诱导是<b>随机的</b>：同一 signature 偶尔返回拒绝，重试常成功——说明这是模型行为层的诱导，不是确定性解密。</li>
+  </ul>
+
+  <h2><span class="no">3.</span>A 类的机制（用合成数字说清）</h2>
+  <p><span class="mono">mock_sidechannel_demo.py</span> 用高斯 oracle（短~N(1200,90)、长~N(4800,180)）模拟「新状态长度」。成对反转：请求 A 让真值走长分支、请求 B 走短分支，取差 <span class="mono">D=lenA−lenB</span>；真则 D&gt;0。多次投票压噪，二分字符集逐位还原。真实跑出：</p>
+  <ul>
+    <li>16 位 hex canary <span class="mono">3f0ac1d9b8e27f64</span> <b class="cy">逐字符还原 exact_match=True</b>，理论=实测=384 次请求。</li>
+    <li>控制组<b>移除 opaque state</b> 后：单判定正确率从 <b>1.000 掉到 0.497</b>，还原串完全错。</li>
+  </ul>
+  <div class="box cyc"><div class="t cy">最强防御论据</div><b>没有状态，信道就退化成掷硬币。</b> 信道存活完全依赖真实的 opaque-state 回填。</div>
+
+  <h2><span class="no">4.</span>防御矩阵（来自 defense_validation.py 真实输出）</h2>
+  <p>单判定正确率越接近 0.5 越好（=攻击者拿不到比特）。对比「单次判定 @1」与「30 次投票 @30」：</p>
+  <table>
+    <tr><th>防御姿势</th><th>正确率 @1</th><th>正确率 @30</th><th>判定</th></tr>
+    <tr><td>无防御 baseline</td><td>1.000</td><td><b>1.000</b></td><td>信道打通</td></tr>
+    <tr><td>定长填充 / 长度归一化</td><td>0.488</td><td><b class="gold">0.492</b></td><td><b class="cy">信道死亡</b></td></tr>
+    <tr><td>随机填充（零均值噪声）</td><td>0.739</td><td><b class="red">0.996</b></td><td>被投票穿透</td></tr>
+    <tr><td>分桶 · 边界没选好</td><td>1.000</td><td><b class="red">1.000</b></td><td>等于没防</td></tr>
+    <tr><td>分桶 · 粗到吞掉两簇</td><td>0.511</td><td><b class="gold">0.505</b></td><td><b class="cy">信道死亡</b>（字段也废）</td></tr>
+  </table>
+  <div class="box warnc"><div class="t warn">三个反直觉但真实的结论</div>
+  <ol>
+    <li><b class="red">随机噪声不是防御</b>：@1 被压到 0.739，但攻击者多发几次请求投票，@30 又爬回 0.996——零均值噪声会被平均掉。加噪只抬高攻击成本，不改变可达性。</li>
+    <li><b>分桶要做对方向</b>：桶边界卡在两簇之间（短→0、长→4000）反而让 Δ 更干净；必须粗到把两簇吞进同一个桶，Δ 才真正→0——可那时这个字段基本没信息量了。</li>
+    <li><b class="gold">真正干净的做法不在这张表里</b>：它不是「把长度变换一下」，而是<b>从源头撤掉 oracle</b>——不 rehydrate 外来 opaque state，攻击者根本没有可测的长度可读。</li>
+  </ol></div>
+
+  <h2><span class="no">5.</span>落地缓解清单（按性价比排序）</h2>
+  <h3>根因级（首选）</h3>
+  <ul>
+    <li><b>不 rehydrate 外来 opaque state。</b> 不接受把客户端传入的 <span class="mono">thinking.signature</span> / 加密推理块回填进新请求去解密。这一条同时干掉 A 和 B。</li>
+    <li><b>不对外开启 extended thinking / 不回传 signature。</b> 没有封存副本，就没有可采集、可回放的目标。</li>
+  </ul>
+  <h3>载体级（纵深防御）</h3>
+  <ul>
+    <li><b>signature 只留在服务端</b>：按 turn index 引用，响应只暴露布尔 <span class="mono">has_signature</span>——但这只挡「顺手拿」，挡不住 BYOK 自带 signature 的路径。</li>
+    <li><b>长度归一化 / 定长填充</b>打掉 A 类载体（已验证 @30→0.492）。</li>
+    <li><b>模型名绑定当防线用</b>：服务端拒绝跨模型/跨账户回放，让采集来的 signature 无法在别处解封。</li>
+    <li><b>一次性 / 短时效 signature</b>：采集后即失效，回放窗口收紧。</li>
+    <li><b>usage / 计量字段粗粒度化或加噪</b>，但记住 §4：加噪只抬成本，分桶要粗到有效，别当银弹。</li>
+  </ul>
+  <h3>检测级</h3>
+  <ul>
+    <li>告警<b>请求里带入 <span class="mono">assistant.thinking</span> + 空 thinking 文本 + 非空 signature</b> 的模式（replay 指纹）。</li>
+    <li>告警<b>成对反转式流量</b>：同一 prompt 家族高频、答案二值化、逐位推进的二分搜索形态。</li>
+    <li>落盘审计 signature 的进出点（采集响应、BYOK 提交、session 回放三处）。</li>
+  </ul>
+
+  <h2><span class="no">6.</span>现实里往往根本没有攻击面</h2>
+  <p>在正经蒸馏数据里（见 <span class="mono">blackbox_distillation.py</span> 与幻灯片 §14）：teacher 的真实轨迹常常 <span class="mono">reasoning_tokens=0</span>、<span class="mono">signature=null</span>——<b>根本没有被封存的推理可提取</b>。需要蒸馏数据时，走<b>只采集可见 input→output</b> 的黑盒路线即可，合规、可落地、也不需要碰任何隐藏状态。</p>
+
+  <div class="foot">
+    相关文件：<b>mock_sidechannel_demo.py</b>（A 类机制 + 控制组）· <b>defense_validation.py</b>（§4 防御矩阵真实来源）· <b>blackbox_distillation.py</b>（§6 合规蒸馏）· <b>README.md</b>（本目录边界说明）。<br>
+    本目录刻意不提供任何针对真实模型隐藏推理状态的提取/解封实现。
+  </div>
+
+</div>
+</body>
+</html>
