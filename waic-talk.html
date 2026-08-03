@@ -82,13 +82,13 @@
 </head>
 <body>
 <div class="bar" id="bar"></div>
-<div class="logo"><b>京东健康</b> · WAIC 2026</div>
+<div class="logo"><b>京东健康</b> · 中日友好医院宣讲</div>
 
 <div class="deck" id="deck">
 
   <!-- 1 封面 -->
   <section class="slide active">
-    <div class="eyebrow"><span class="dot"></span>WAIC 2026 · 京东健康</div>
+    <div class="eyebrow"><span class="dot"></span>中日友好医院（国家呼吸医学中心）· 京东健康宣讲</div>
     <h1>确定性来自执行<br><span class="grad">用代码和操作流重定义可信医疗 AI</span></h1>
     <div class="sub">可执行　·　可回放　·　可审计</div>
     <div class="sign">刘思远 Leo　｜　京东健康 AI 负责人 · JoyAI-Med</div>
@@ -236,6 +236,7 @@
         <p>病例 <span class="mono">CT1000650</span>，非增强腹部 CT。带标注的封闭式问题，答案有 <b>exact ground truth</b> 兜底。</p>
         <p>问题：<b>"胃壁是否肿胀？（Is the gastric wall swollen?）"</b></p>
         <p class="sub">模型 <span class="mono">qwen3_5_dense_m3d_dual · ckpt-1200</span>，接下来它会自己加载序列、调窗、画框、重建，一步步给出可核验的结论。</p>
+        <p class="sub">这里用的是一例腹部 CT；<b class="cy">同一套 3D Chain-of-Operator，换成胸部 CT（肺结节定位、纵隔核验）同理成立</b>——方法与模态无关。</p>
       </div>
     </div>
   </section>
