@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>京东健康 · 宣讲材料</title>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--warn:#ff9d66;--red:#ff7b91;
+    --ink:#eaf0ff;--sub:#93a0bd;--bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.05);
+    --line:rgba(255,255,255,.12);--code:rgba(93,228,199,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(1200px 700px at 82% -10%,rgba(110,168,255,.20),transparent 60%),
+      radial-gradient(900px 600px at 8% 110%,rgba(167,139,255,.16),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0));
+    color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased;}
+  .deck{position:fixed;inset:0;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    padding:7vh 8vw;opacity:0;pointer-events:none;transform:translateY(24px);
+    transition:opacity .5s ease,transform .5s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;font-size:14px;letter-spacing:3px;color:var(--sub);margin-bottom:16px;}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc);}
+  h1{font-size:clamp(32px,5.4vw,64px);line-height:1.16;letter-spacing:1px;font-weight:800;}
+  h2{font-size:clamp(22px,3.4vw,40px);line-height:1.24;letter-spacing:1px;font-weight:800;margin-bottom:6px;}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cy{color:var(--cy);}.gold{color:var(--gold);}.acc{color:var(--acc);}
+  .sub{font-size:clamp(14px,1.7vw,19px);color:var(--sub);line-height:1.85;margin-top:14px;letter-spacing:.4px;}
+  .body{font-size:clamp(15px,1.85vw,21px);line-height:1.95;margin-top:22px;max-width:52em;}
+  .body b{color:var(--gold);}
+  .sign{margin-top:24px;font-size:14px;color:var(--sub);letter-spacing:2px;}
+  .sign b{color:var(--ink);}
+  .cards{display:flex;gap:16px;margin-top:26px;flex-wrap:wrap;}
+  .card{flex:1;min-width:220px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;backdrop-filter:blur(6px);}
+  .card .k{font-size:14px;color:var(--cy);letter-spacing:2px;margin-bottom:10px;}
+  .card .v{font-size:15px;line-height:1.7;color:var(--ink);}
+  .card .v b{color:var(--gold);}
+  .list{margin-top:24px;display:flex;flex-direction:column;gap:15px;}
+  .li{display:flex;gap:15px;align-items:flex-start;font-size:clamp(15px,1.9vw,22px);line-height:1.5;}
+  .li .idx{flex:none;width:34px;height:34px;border-radius:9px;background:rgba(110,168,255,.16);
+    border:1px solid rgba(110,168,255,.4);color:var(--acc);font-size:15px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .li b{color:var(--gold);}
+  .li .def{color:var(--sub);}
+  .warnc{border:1px dashed rgba(255,157,102,.5);background:rgba(255,157,102,.08);border-radius:12px;
+    padding:13px 18px;margin-top:22px;font-size:14.5px;color:var(--warn);letter-spacing:.5px;}
+  .bar{position:fixed;left:0;top:0;height:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));z-index:30;transition:width .4s;}
+  .hud{position:fixed;bottom:22px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;z-index:30;}
+  .dots{display:flex;gap:7px;}
+  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .3s;}
+  .dots i.on{background:var(--acc);width:24px;border-radius:5px;}
+  .nav{position:fixed;bottom:18px;right:26px;display:flex;gap:10px;z-index:30;}
+  .nav b{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;backdrop-filter:blur(6px);}
+  .nav b:hover{border-color:var(--acc);color:var(--acc);}
+  .pageno{position:fixed;bottom:26px;left:26px;font-size:13px;color:var(--sub);letter-spacing:2px;z-index:30;}
+  .pageno b{color:var(--ink);}
+  .logo{position:fixed;top:20px;right:26px;font-size:13px;letter-spacing:2px;color:var(--sub);z-index:30;}
+  .logo b{color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="logo"><b>京东健康</b> · 宣讲材料</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 封面 -->
+  <section class="slide active">
+    <div class="eyebrow"><span class="dot"></span>企业宣讲报名材料</div>
+    <h1>京东健康<br><span class="grad">医疗大模型与智能体宣讲</span></h1>
+    <div class="sub">企业简介 · 宣讲人简介 · 拟宣讲题目</div>
+    <div class="sign">宣讲人 · <b>刘思远 Leo</b>　｜　京东健康 AI 副总裁 · JoyAI-Med 负责人</div>
+  </section>
+
+  <!-- 2 企业简介 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>① 企业简介 · 约 260 字</div>
+    <h2>覆盖医药供应链到智慧医疗的<span class="grad">全链路平台</span></h2>
+    <div class="body">京东健康（股票代码 <b>06618.HK</b>）是京东集团旗下专注医疗健康的核心业务，以"成为国民首席健康管家"为使命，构建覆盖医药供应链、互联网医疗、健康管理与智慧医疗的全链路服务体系。主营业务包括医药和健康产品零售、在线问诊与处方续方、慢病与专科健康管理，以及面向医院、药企的数字化解决方案。</div>
+    <div class="cards">
+      <div class="card"><div class="k">行业优势 · 供应链</div><div class="v">全渠道医药供应链与<b>自营履约</b>能力，覆盖广、时效快</div></div>
+      <div class="card"><div class="k">行业优势 · 数据</div><div class="v">互联网医院沉淀海量<b>真实诊疗与用药数据</b>，高质量语料</div></div>
+      <div class="card"><div class="k">行业优势 · 技术</div><div class="v">医疗大模型与智能体已在<b>专病辅助 / 用药安全 / 健康风控</b>规模化应用</div></div>
+    </div>
+  </section>
+
+  <!-- 3 宣讲人简介 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>② 宣讲人简介及联系方式 · 约 190 字</div>
+    <h2>刘思远 Leo · <span class="grad">京东健康 AI 副总裁</span></h2>
+    <div class="body"><b>职务</b>：京东健康 AI 副总裁、JoyAI-Med 部门负责人，负责医疗大模型与医疗智能体（Agent）基础设施建设，统筹专病大模型、机器学习、商业 Agent、健康风控与推理评测/私有化部署等多个团队。</div>
+    <div class="body"><b>技术研究方向</b>：医疗大模型与多模态（文本/影像/肺功能/呼吸介入等）、医疗智能体框架与运行时、循证医学知识工程、模型推理与评测；主导呼吸专科大模型、医疗数据集 2.0 等重点方向。</div>
+    <div class="warnc">联系方式：手机【待补】　邮箱【待补】——发出前请补真实信息</div>
+  </section>
+
+  <!-- 4 拟宣讲题目 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>③ 拟宣讲题目 · 候选</div>
+    <h2>拟宣讲<span class="grad">题目</span></h2>
+    <div class="list">
+      <div class="li"><div class="idx">1</div><div><b>医疗大模型与智能体：从循证知识到临床多模态的工程落地</b><span class="def"> · 默认</span></div></div>
+      <div class="li"><div class="idx">2</div><div>医疗多模态大模型在院内高阶 MDT 场景的探索——以呼吸专科为例</div></div>
+      <div class="li"><div class="idx">3</div><div>从数据护城河到医疗智能体：京东健康的大模型基建实践</div></div>
+    </div>
+    <div class="sub">提交方式：微信 / 邮箱 <b class="cy">xuejiaojolly@126.com</b> 交宋雪骄。</div>
+  </section>
+
+</div>
+
+<div class="pageno"><b id="cur">1</b> / <span id="tot">4</span></div>
+<div class="hud"><div class="dots" id="dots"></div></div>
+<div class="nav"><b id="prev">‹</b><b id="next">›</b></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  const tot=slides.length;
+  document.getElementById('tot').textContent=tot;
+  let i=0;
+  slides.forEach((_,k)=>{const d=document.createElement('i');d.onclick=()=>go(k);dots.appendChild(d);});
+  function go(n){i=Math.max(0,Math.min(tot-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('bar').style.width=((i+1)/tot*100)+'%';}
+  document.getElementById('next').onclick=()=>go(i+1);
+  document.getElementById('prev').onclick=()=>go(i-1);
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+  go(0);
+</script>
+</body>
+</html>
