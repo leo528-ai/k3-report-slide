@@ -97,7 +97,7 @@
     <h1>Reasoning State Lab<br><span class="grad">加密推理状态的长度旁路提取</span></h1>
     <div class="sub">不碰任何密码学密钥，只测一条更高层的状态机是否成立：<br>
       <span class="mono" style="display:inline-block;margin-top:12px;">opaque state <span class="a">→</span> provider rehydration <span class="a">→</span> private predicate <span class="a">→</span> new opaque-state length</span></div>
-    <div class="sign">原理 + 调用链 + 判定标准　｜　导读 · <b style="color:var(--ink)">刘思远 Leo</b></div>
+    <div class="sign">原理 + 调用链 + 判定标准　｜　导读 · <b style="color:var(--ink)">胡浩源</b></div>
   </section>
 
   <!-- 2 定位 + 状态机 -->
@@ -458,9 +458,37 @@ recovery.json(0600) 存文本+sha256+match；REPORT.md <span class="a">只写</s
     </div>
   </section>
 
+  <!-- 24 研究定位 + 公开出处 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§15 研究定位 · 属于哪一类工作</div>
+    <h2>它坐落在<span class="grad">三条公开研究脉络</span>的交叉点</h2>
+    <div class="cards">
+      <div class="card"><div class="k">旁路信道</div><div class="v">经典 side-channel 思路：秘密不从明文泄漏，而从<b>时间 / 长度 / 资源占用</b>等可观测量泄漏。本工具把「苦工量」写进状态长度，是 timing/length channel 的直接变体。</div></div>
+      <div class="card"><div class="k">加密推理状态</div><div class="v">厂商把 CoT 封进不透明状态（Claude <b>thinking.signature</b> / OpenAI <b>encrypted_content</b>）以隐藏推理。研究关心：这层封装是否真的不可观测。</div></div>
+      <div class="card"><div class="k">CoT 蒸馏与防护</div><div class="v">从强模型偷隐藏推理去蒸馏，是当前热点；防护方则研究如何让推理<b>不可提取、不可复现</b>。本工具是站在攻击面上的<b>可证伪度量</b>。</div></div>
+    </div>
+    <div class="sub"><b class="warn">出处口径</b>：以上是研究<b>方向</b>而非具体引用。对外引用前，每一篇论文 / 博客的标题、作者、结论都要<b class="cy">逐条核实</b>，不把方向当成已发表的既成事实。</div>
+  </section>
+
+  <!-- 25 防御视角 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§16 防御视角 · 服务方怎么堵</div>
+    <h2>把攻击前提<span class="grad">逐条拆掉</span></h2>
+    <div class="sub">整条链依赖两个前提：<b class="cy">① 服务端愿意 rehydrate 陌生 state；② 状态长度随私有推理量变化</b>。防御就是把这两点各个击破。</div>
+    <table class="tbl">
+      <tr><th>攻击依赖</th><th>防御动作</th></tr>
+      <tr><td>回灌任意 opaque state 都会被复活</td><td>不 rehydrate <b>陌生 / 跨会话 / 跨请求</b>的 state；state 与会话绑定 + 签名校验，拒绝 replay</td></tr>
+      <tr><td>状态长度随苦工量单调变化</td><td>对返回状态做<b>长度归一化 / 定长填充</b>，让长短分支产生等长载体，抹掉长度差</td></tr>
+      <tr><td>同一 state 可被反复配对测量</td><td>限制 signature <b>一次性 / 短时效</b>，禁止同一 state 多次 replay</td></tr>
+      <tr><td>reasoning_tokens 精确可读</td><td>用量字段<b>分桶 / 加噪 / 不回传</b>，切断第二条特征维度</td></tr>
+      <tr><td>成对差分抵消固定开销</td><td>服务端注入<b>随机延迟 / 随机 padding</b>，抬高噪声底噪，压低 held-out AUC</td></tr>
+    </table>
+    <div class="sub">最省事的一条：<b class="gold">默认不开 extended thinking，就没有 signature，攻击面直接归零</b>——正是 §14 batch4 真实数据里 reasoning_tokens=0 的天然状态。</div>
+  </section>
+
 </div>
 
-<div class="pageno"><b id="cur">1</b> / <span id="tot">23</span></div>
+<div class="pageno"><b id="cur">1</b> / <span id="tot">25</span></div>
 <div class="hud"><div class="dots" id="dots"></div></div>
 <div class="nav"><b id="prev">‹</b><b id="next">›</b></div>
 
