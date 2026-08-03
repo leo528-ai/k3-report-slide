@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>确定性来自执行 · 用代码和操作流重定义可信医疗 AI</title>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--warn:#ff9d66;--red:#ff7b91;
+    --ink:#eaf0ff;--sub:#93a0bd;--bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.05);
+    --line:rgba(255,255,255,.12);--code:rgba(93,228,199,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(1200px 700px at 82% -10%,rgba(110,168,255,.20),transparent 60%),
+      radial-gradient(900px 600px at 8% 110%,rgba(167,139,255,.16),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0));
+    color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased;}
+  .deck{position:fixed;inset:0;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    padding:6.5vh 7vw;opacity:0;pointer-events:none;transform:translateY(24px);
+    transition:opacity .5s ease,transform .5s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;font-size:14px;letter-spacing:3px;color:var(--sub);margin-bottom:16px;}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc);}
+  h1{font-size:clamp(30px,5vw,60px);line-height:1.16;letter-spacing:1px;font-weight:800;}
+  h2{font-size:clamp(21px,3.3vw,38px);line-height:1.24;letter-spacing:1px;font-weight:800;margin-bottom:6px;}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cy{color:var(--cy);}.gold{color:var(--gold);}.acc{color:var(--acc);}.warn{color:var(--warn);}
+  .sub{font-size:clamp(14px,1.7vw,19px);color:var(--sub);line-height:1.8;margin-top:14px;letter-spacing:.4px;}
+  .body{font-size:clamp(15px,1.8vw,21px);line-height:1.9;margin-top:20px;max-width:54em;}
+  .body b{color:var(--gold);}
+  .sign{margin-top:24px;font-size:14px;color:var(--sub);letter-spacing:2px;}
+  .sign b{color:var(--ink);}
+  .cards{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;}
+  .card{flex:1;min-width:210px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;backdrop-filter:blur(6px);}
+  .card .k{font-size:14px;color:var(--cy);letter-spacing:2px;margin-bottom:10px;}
+  .card .v{font-size:15px;line-height:1.7;color:var(--ink);}
+  .card .v b{color:var(--gold);}
+  .card .big{font-size:30px;font-weight:800;color:var(--gold);letter-spacing:1px;}
+  .list{margin-top:22px;display:flex;flex-direction:column;gap:13px;}
+  .li{display:flex;gap:14px;align-items:flex-start;font-size:clamp(15px,1.85vw,21px);line-height:1.5;}
+  .li .idx{flex:none;width:32px;height:32px;border-radius:9px;background:rgba(110,168,255,.16);
+    border:1px solid rgba(110,168,255,.4);color:var(--acc);font-size:15px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .li b{color:var(--gold);}
+  .li .def{color:var(--sub);}
+  .cmp{display:flex;gap:18px;margin-top:24px;flex-wrap:wrap;}
+  .cmp .col{flex:1;min-width:260px;border-radius:16px;padding:18px 20px;border:1px solid var(--line);background:var(--card);}
+  .cmp .col.bad{border-color:rgba(255,123,145,.35);}
+  .cmp .col.good{border-color:rgba(93,228,199,.4);}
+  .cmp .col h3{font-size:16px;letter-spacing:1px;margin-bottom:12px;}
+  .cmp .col.bad h3{color:var(--red);}
+  .cmp .col.good h3{color:var(--cy);}
+  .cmp .col p{font-size:14.5px;line-height:1.8;color:var(--ink);margin:6px 0;}
+  .cmp .col p .t{color:var(--sub);}
+  .demo{display:flex;gap:22px;margin-top:20px;align-items:center;flex-wrap:wrap;}
+  .demo img{flex:1;min-width:0;max-width:62%;border-radius:12px;border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);}
+  .demo .cap{flex:1;min-width:220px;}
+  .demo .cap .step{display:inline-block;font-size:13px;letter-spacing:2px;color:var(--cy);
+    border:1px solid rgba(93,228,199,.4);border-radius:20px;padding:4px 14px;margin-bottom:14px;}
+  .demo .cap h2{font-size:clamp(20px,2.6vw,30px);margin-bottom:12px;}
+  .demo .cap p{font-size:15.5px;line-height:1.85;color:var(--ink);margin:9px 0;}
+  .demo .cap p b{color:var(--gold);}
+  .mono{font-family:'SF Mono','Menlo','Consolas',monospace;background:var(--code);
+    border:1px solid rgba(93,228,199,.22);border-radius:7px;padding:1px 7px;color:var(--cy);font-size:.9em;}
+  .warnc{border:1px dashed rgba(255,157,102,.5);background:rgba(255,157,102,.08);border-radius:12px;
+    padding:12px 18px;margin-top:20px;font-size:14.5px;color:var(--warn);letter-spacing:.4px;}
+  .bar{position:fixed;left:0;top:0;height:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));z-index:30;transition:width .4s;}
+  .hud{position:fixed;bottom:22px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;z-index:30;}
+  .dots{display:flex;gap:6px;}
+  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .3s;}
+  .dots i.on{background:var(--acc);width:22px;border-radius:5px;}
+  .nav{position:fixed;bottom:18px;right:26px;display:flex;gap:10px;z-index:30;}
+  .nav b{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;backdrop-filter:blur(6px);}
+  .nav b:hover{border-color:var(--acc);color:var(--acc);}
+  .pageno{position:fixed;bottom:26px;left:26px;font-size:13px;color:var(--sub);letter-spacing:2px;z-index:30;}
+  .pageno b{color:var(--ink);}
+  .logo{position:fixed;top:20px;right:26px;font-size:13px;letter-spacing:2px;color:var(--sub);z-index:30;}
+  .logo b{color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="logo"><b>京东健康</b> · WAIC 2026</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 封面 -->
+  <section class="slide active">
+    <div class="eyebrow"><span class="dot"></span>WAIC 2026 · 京东健康</div>
+    <h1>确定性来自执行<br><span class="grad">用代码和操作流重定义可信医疗 AI</span></h1>
+    <div class="sub">可执行　·　可回放　·　可审计</div>
+    <div class="sign">刘思远 Leo　｜　京东健康 AI 负责人 · JoyAI-Med</div>
+  </section>
+
+  <!-- 2 核心判断 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>核心判断</div>
+    <h2>下一阶段的竞争，<span class="grad">不再是"谁的模型最大"</span></h2>
+    <div class="body">而是 <b>"谁能把 AI 可靠、可信、可规模化地交付到医生手里"</b>。医疗场景对错误零容忍：一次幻觉、一处不可复核的结论，就足以让整套系统失去临床信任。</div>
+    <div class="body">我们的答案是把不确定的"生成"，压回到确定的<b>"执行"</b>——让每一个医疗判断都建立在<b>可执行的代码、可回放的操作流、可审计的证据</b>之上。</div>
+    <div class="cards">
+      <div class="card"><div class="k">可执行</div><div class="v">指南与推理落成<b>代码与工具调用</b>，而非自然语言独白</div></div>
+      <div class="card"><div class="k">可回放</div><div class="v">每一步 Observe→Act→Verify <b>留痕可重跑</b></div></div>
+      <div class="card"><div class="k">可审计</div><div class="v">结论绑定<b>图像证据 / 引用来源</b>，可逐条核验</div></div>
+    </div>
+  </section>
+
+  <!-- 3 三块基石 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>整体框架 · 三块基石</div>
+    <h2>从<span class="grad">标尺</span>到<span class="grad">引擎</span>再到<span class="grad">交付</span></h2>
+    <div class="cards">
+      <div class="card"><div class="k">① 开放评测</div><div class="v">与上海 AI 实验室联合，循证 / 多模态问诊 / 3D 影像基准，<b>建立行业标尺</b></div></div>
+      <div class="card"><div class="k">② 可验证推理 · JoyAI-MedCode</div><div class="v"><b>指南即代码</b> × 多专家蒸馏；操作流轨迹替代思维链</div></div>
+      <div class="card"><div class="k">③ 开放交付 · MedWork</div><div class="v">开放的<b>医生 Agent 基础设施</b>，把模型稳定、经济地送到每位医生手里</div></div>
+    </div>
+    <div class="sub">今天重点讲第二块的"操作流"，并现场回放一段 <span class="cy">3D 阅片智能体</span> 的真实执行轨迹。</div>
+  </section>
+
+  <!-- 4 开放评测 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>① 开放评测 · 建立行业标尺</div>
+    <h2>没有可信的<span class="grad">标尺</span>，就没有可信的模型</h2>
+    <div class="body">与上海人工智能实验室联合，围绕真实临床任务构建并开放一组基准，覆盖循证、多模态问诊与 3D 影像三条主线。</div>
+    <div class="cards">
+      <div class="card"><div class="k">MedEviBench · 循证</div><div class="v">考核结论是否<b>有据可依</b>、引用是否可追溯</div></div>
+      <div class="card"><div class="k">MedRealMM · 多模态问诊</div><div class="v">贴近真实门诊的<b>图文混合</b>问诊场景</div></div>
+      <div class="card"><div class="k">Med3DVQA · 3D 影像</div><div class="v">CT/MR <b>体数据</b>上的问答与定位</div></div>
+    </div>
+    <div class="sub">配合 MedBench v5.0 作为综合能力盘，评测结果开放、可复现。</div>
+  </section>
+
+  <!-- 5 Med3DVQA 关键发现 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>评测关键发现 · Med3DVQA</div>
+    <h2>通用多模态模型在 3D 影像上的<span class="grad">四类短板</span></h2>
+    <div class="list">
+      <div class="li"><span class="idx">1</span><div><b>空间尺度失真</b>　<span class="def">忽略体素 spacing，把"几毫米"和"几厘米"混为一谈</span></div></div>
+      <div class="li"><span class="idx">2</span><div><b>窗宽窗位不当</b>　<span class="def">不会按解剖部位切换窗位，软组织病灶被"洗白"</span></div></div>
+      <div class="li"><span class="idx">3</span><div><b>Z 轴定位漂移</b>　<span class="def">跨层面追踪能力弱，定位在层间来回跳</span></div></div>
+      <div class="li"><span class="idx">4</span><div><b>结论无据</b>　<span class="def">给答案但指不出证据切面，无法核验</span></div></div>
+    </div>
+    <div class="warnc">这四类短板，正是"操作流"要逐一堵死的地方——让模型像放射科医生一样<b>动手看片</b>，而不是凭记忆答题。</div>
+  </section>
+
+  <!-- 6 JoyAI-MedCode -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>② 可验证推理 · JoyAI-MedCode</div>
+    <h2>指南即代码 <span class="grad">×</span> 多专家蒸馏</h2>
+    <div class="body">把临床指南与推理过程编译成<b>可执行代码与工具调用</b>，让"为什么这么判"变成一段能重跑、能审计的程序，而不是一段说服性的文字。</div>
+    <div class="cards">
+      <div class="card"><div class="k">HealthBench · Total</div><div class="v"><span class="big">69.3</span> SOTA</div></div>
+      <div class="card"><div class="k">HealthBench · Hard</div><div class="v"><span class="big">50.6</span> SOTA</div></div>
+      <div class="card"><div class="k">模型规格</div><div class="v">Dense <b>27B</b> / MoE <b>35B</b>；三模态 MRoPE、spacing-aware、Z 轴 token 压缩</div></div>
+    </div>
+  </section>
+
+  <!-- 7 指南即代码 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>可验证推理 · 指南即代码</div>
+    <h2>把 <span class="grad">NCCN / CSCO</span> 指南写成可执行的决策程序</h2>
+    <div class="body">以非小细胞肺癌（NSCLC）分期与用药为例：分型、分期、基因分型、一线方案选择等分支，被显式编码为<b>带条件判断的代码路径</b>。</div>
+    <div class="cmp">
+      <div class="col bad"><h3>自由文本推理</h3>
+        <p><span class="t">路径不可见</span>：改一个前提，结论怎么变，说不清</p>
+        <p><span class="t">不可回放</span>：同一问题两次答案可能不同</p>
+        <p><span class="t">难审计</span>：错在哪一步无法定位</p>
+      </div>
+      <div class="col good"><h3>指南即代码</h3>
+        <p><span class="t">路径显式</span>：每个分支对应指南条目，可追溯</p>
+        <p><span class="t">可回放</span>：相同输入必得相同决策路径</p>
+        <p><span class="t">可审计</span>：错在哪个判断，一眼定位并修正</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 medwiki vs RAG -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>可验证推理 · 循证知识层 medwiki</div>
+    <h2>medwiki：<span class="grad">主动检索</span>的循证知识，而非被动拼接</h2>
+    <div class="cmp">
+      <div class="col bad"><h3>传统 RAG</h3>
+        <p>按相似度<span class="t">一次性召回</span>片段，塞进上下文</p>
+        <p>召回质量看运气，<span class="t">证据链断裂</span></p>
+        <p>拼接结果，<span class="t">难以逐条溯源</span></p>
+      </div>
+      <div class="col good"><h3>medwiki（llmwiki + agentic search）</h3>
+        <p>模型<span class="t">主动多轮检索</span>，围绕问题逐步补证</p>
+        <p>知识以 wiki 结构组织，<span class="t">条目间可跳转互链</span></p>
+        <p>每条结论<span class="t">绑定可追溯来源</span>，支持核验</p>
+      </div>
+    </div>
+    <div class="sub">medwiki 与 JoyAI-MedCode 基座并列，构成"知识层 + 推理层"的双引擎。</div>
+  </section>
+
+  <!-- 9 操作流轨迹 vs CoT -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>可验证推理 · 核心范式</div>
+    <h2>用<span class="grad">操作流轨迹</span>替代<span class="grad">思维链</span></h2>
+    <div class="cmp">
+      <div class="col bad"><h3>思维链 CoT</h3>
+        <p>一段<span class="t">自然语言独白</span>，说得通就算对</p>
+        <p>可以<span class="t">编造</span>：文字能"想象"出没看到的东西</p>
+        <p>无法验证每一步是否真的发生</p>
+      </div>
+      <div class="col good"><h3>操作流轨迹（Observe→Act→Verify）</h3>
+        <p>每一步是<span class="t">真实工具调用</span>：加载序列、调窗位、画框、重建</p>
+        <p><b>无法编造</b>：没调用工具就没有那一步的观测</p>
+        <p>结论绑定<span class="t">具体切面与坐标</span>，可回放可审计</p>
+      </div>
+    </div>
+    <div class="warnc">这就是可信的来源：<b>确定性来自执行</b>——模型必须真的"动手看"，痕迹骗不了人。</div>
+  </section>
+
+  <!-- 10 3D Chain-of-Operator -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>可验证推理 · 3D Chain-of-Operator</div>
+    <h2>像放射科医生一样，<span class="grad">分三阶段</span>阅片</h2>
+    <div class="list">
+      <div class="li"><span class="idx">1</span><div><b>全局导航</b>　<span class="def">先看定位像 / 全序列，确定要看的部位与层面范围</span></div></div>
+      <div class="li"><span class="idx">2</span><div><b>目标精读</b>　<span class="def">按部位切换窗宽窗位，逐层精读目标区域</span></div></div>
+      <div class="li"><span class="idx">3</span><div><b>自由核验</b>　<span class="def">画框、3D 重建、三视图交叉核验，把结论钉在证据上</span></div></div>
+    </div>
+    <div class="body">平均 3D VQA 准确率 <b>74.03%</b>，且每个答案都能<b>指回它看的那一帧</b>。下面直接回放一段真实执行。</div>
+  </section>
+
+  <!-- 11 DEMO 引入 -->
+  <section class="slide">
+    <div class="demo">
+      <img src="assets/agentic-trace/demo1-load.jpg" alt="Agentic Trace 界面">
+      <div class="cap">
+        <span class="step">DEMO · 实录回放</span>
+        <h2>Agentic Trace<br><span class="grad">3D 阅片智能体</span></h2>
+        <p>病例 <span class="mono">CT1000650</span>，非增强腹部 CT。带标注的封闭式问题，答案有 <b>exact ground truth</b> 兜底。</p>
+        <p>问题：<b>"胃壁是否肿胀？（Is the gastric wall swollen?）"</b></p>
+        <p class="sub">模型 <span class="mono">qwen3_5_dense_m3d_dual · ckpt-1200</span>，接下来它会自己加载序列、调窗、画框、重建，一步步给出可核验的结论。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 DEMO 加载+推理 -->
+  <section class="slide">
+    <div class="demo">
+      <img src="assets/agentic-trace/demo2-reason.jpg" alt="加载体数据并解析 spacing">
+      <div class="cap">
+        <span class="step">STEP 1 · Observe</span>
+        <h2>先<span class="grad">读懂</span>这套体数据</h2>
+        <p>模型加载序列，读出 <span class="mono">native_shape</span> 与 <span class="mono">native_spacing</span>——<b>先把真实空间尺度搞清楚</b>，再谈"大小"。</p>
+        <p>这一步直接对应评测里的第一类短板：<b>空间尺度失真</b>。不解析 spacing，"肿胀"就无从判断。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 DEMO 调窗 -->
+  <section class="slide">
+    <div class="demo">
+      <img src="assets/agentic-trace/demo3-window.jpg" alt="切换到腹窗">
+      <div class="cap">
+        <span class="step">STEP 3 · Act</span>
+        <h2>切到<span class="grad">腹窗</span>再看</h2>
+        <p>模型主动把窗宽窗位调到 <span class="mono">Abdomen · W/L 350/50</span>，让胃壁软组织的层次显出来。</p>
+        <p>对应第二类短板：<b>窗宽窗位不当</b>。默认窗下软组织被"洗白"，调窗是放射科医生的基本功，模型也得会。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 DEMO set_bbox + 3D -->
+  <section class="slide">
+    <div class="demo">
+      <img src="assets/agentic-trace/demo4-bbox3d.jpg" alt="set_bbox 与 3D 重建">
+      <div class="cap">
+        <span class="step">STEP 5 · Act</span>
+        <h2>定位胃 · <span class="grad">3D 重建</span></h2>
+        <p>真实工具调用 <span class="mono">set_bbox</span>，参数 <span class="mono">region_label:"stomach"</span>。系统据此渲染出紫色 3D 胃体。</p>
+        <p>这不是"文字描述"，是<b>一次可回放的操作</b>：框的坐标、深度、序列号都留痕，任何人可以照着重跑。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 DEMO 核验 -->
+  <section class="slide">
+    <div class="demo">
+      <img src="assets/agentic-trace/demo5-verify.jpg" alt="三视图核验并给结论">
+      <div class="cap">
+        <span class="step">STEP 6 · Verify</span>
+        <h2>三视图核验 → <span class="grad">结论 YES</span></h2>
+        <p>bbox 同步落在 <b>轴位 / 冠状 / 矢状 + 3D</b> 四个视图上。模型给出推理：<b>"胃壁呈异常软组织增厚和肿胀……符合 YES"</b>。</p>
+        <p>结论绑定到<b>具体切面与框</b>，医生可以直接点开那一帧复核。这就是<span class="cy">可执行·可回放·可审计</span>的闭环。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 MedWork -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>③ 开放交付 · MedWork</div>
+    <h2>把模型<span class="grad">稳定、经济</span>地送到每位医生手里</h2>
+    <div class="body">MedWork 是开放的<b>医生 Agent 基础设施</b>：统一的工具运行时、可回放的轨迹存储、私有化部署与推理评测，让上面所有能力可以在医院内落地、可运维、可审计。</div>
+    <div class="cards">
+      <div class="card"><div class="k">开放</div><div class="v">工具与 Agent 框架开放，医院/药企<b>可自建可扩展</b></div></div>
+      <div class="card"><div class="k">稳定</div><div class="v">轨迹留痕、可回放，<b>出问题能定位、能复现</b></div></div>
+      <div class="card"><div class="k">经济</div><div class="v">Dense/MoE 双规格 + Z 轴压缩，<b>算力可控</b>可私有化</div></div>
+    </div>
+  </section>
+
+  <!-- 17 结尾 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>结语</div>
+    <h2>确定性，<span class="grad">来自执行</span></h2>
+    <div class="body">当医疗 AI 的每一步都<b>可执行、可回放、可审计</b>，信任才不再依赖"模型有多大"，而是建立在能被任何人复核的证据之上。</div>
+    <div class="body">这是京东健康正在做的事：把开放评测的标尺、可验证推理的引擎、开放交付的基础设施，一起交给行业。</div>
+    <div class="sign">谢谢　·　<b>刘思远 Leo</b>　｜　京东健康 AI · JoyAI-Med</div>
+  </section>
+
+</div>
+
+<div class="pageno"><b id="cur">1</b> / <span id="tot">17</span></div>
+<div class="hud"><div class="dots" id="dots"></div></div>
+<div class="nav"><b id="prev">‹</b><b id="next">›</b></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  const tot=slides.length;
+  document.getElementById('tot').textContent=tot;
+  let i=0;
+  slides.forEach((_,k)=>{const d=document.createElement('i');d.onclick=()=>go(k);dots.appendChild(d);});
+  function go(n){i=Math.max(0,Math.min(tot-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('bar').style.width=((i+1)/tot*100)+'%';}
+  document.getElementById('next').onclick=()=>go(i+1);
+  document.getElementById('prev').onclick=()=>go(i-1);
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')go(i+1);if(e.key==='ArrowLeft')go(i-1);});
+  go(0);
+</script>
+</body>
+</html>
