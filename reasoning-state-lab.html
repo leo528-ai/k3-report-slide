@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reasoning State Lab · 设计文档导读</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.10.1/dist/mermaid.min.js"></script>
+<style>
+  :root{--acc:#6ea8ff;--acc2:#a78bff;--cy:#5de4c7;--gold:#f4d58d;--warn:#ff9d66;--red:#ff7b91;
+    --ink:#eaf0ff;--sub:#93a0bd;--bg0:#05070f;--bg1:#0c1222;--card:rgba(255,255,255,.05);
+    --line:rgba(255,255,255,.12);--code:rgba(93,228,199,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'JDLANGZHENGTI','京东朗正体','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(1200px 700px at 82% -10%,rgba(110,168,255,.20),transparent 60%),
+      radial-gradient(900px 600px at 8% 110%,rgba(167,139,255,.16),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0));
+    color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased;}
+  .deck{position:fixed;inset:0;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    padding:6vh 7vw;opacity:0;pointer-events:none;transform:translateY(24px);
+    transition:opacity .5s ease,transform .5s ease;overflow:hidden;}
+  .slide.active{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;font-size:14px;letter-spacing:3px;
+    color:var(--sub);margin-bottom:16px;}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc);}
+  h1{font-size:clamp(32px,5.4vw,64px);line-height:1.16;letter-spacing:1px;font-weight:800;}
+  h2{font-size:clamp(22px,3.4vw,40px);line-height:1.24;letter-spacing:1px;font-weight:800;margin-bottom:6px;}
+  .grad{background:linear-gradient(100deg,#fff,var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .grad2{background:linear-gradient(100deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .acc{color:var(--acc);}.cy{color:var(--cy);}.gold{color:var(--gold);}.warn{color:var(--warn);}.red{color:var(--red);}
+  .sub{font-size:clamp(14px,1.7vw,19px);color:var(--sub);line-height:1.8;margin-top:14px;letter-spacing:.4px;}
+  .quote{font-size:clamp(20px,3vw,38px);line-height:1.5;font-weight:700;letter-spacing:1px;}
+  .quote .mark{color:var(--acc);font-size:1.3em;}
+  .sign{margin-top:22px;font-size:14px;color:var(--sub);letter-spacing:2px;}
+  .cards{display:flex;gap:16px;margin-top:26px;flex-wrap:wrap;}
+  .card{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:20px 20px;backdrop-filter:blur(6px);}
+  .card .k{font-size:14px;color:var(--cy);letter-spacing:2px;margin-bottom:9px;}
+  .card .v{font-size:15px;line-height:1.65;color:var(--ink);}
+  .card .v b{color:var(--gold);}
+  .card.warnc{border-color:rgba(255,157,102,.45);background:linear-gradient(160deg,rgba(255,157,102,.10),var(--card));}
+  .card.redc{border-color:rgba(255,123,145,.45);background:linear-gradient(160deg,rgba(255,123,145,.10),var(--card));}
+  .stats{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+  .stat .n{font-size:clamp(34px,6vw,72px);font-weight:800;line-height:1;
+    background:linear-gradient(120deg,#fff,var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .stat .l{font-size:13px;color:var(--sub);margin-top:9px;letter-spacing:1px;line-height:1.5;}
+  .list{margin-top:22px;display:flex;flex-direction:column;gap:13px;}
+  .li{display:flex;gap:14px;align-items:flex-start;font-size:clamp(15px,1.85vw,21px);line-height:1.5;}
+  .li .idx{flex:none;width:32px;height:32px;border-radius:9px;background:rgba(110,168,255,.16);
+    border:1px solid rgba(110,168,255,.4);color:var(--acc);font-size:14px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .li b{color:var(--gold);}
+  .tags{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;}
+  .tags span{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;font-size:14px;letter-spacing:.5px;}
+  .tbl{margin-top:20px;width:100%;border-collapse:collapse;font-size:clamp(12px,1.45vw,16.5px);}
+  .tbl th,.tbl td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  .tbl th{color:var(--cy);font-weight:700;letter-spacing:1px;}
+  .tbl td b{color:var(--gold);}
+  .tbl tr td:first-child{color:var(--sub);white-space:nowrap;}
+  .mono{font-family:'SF Mono','Menlo','Consolas',monospace;font-size:clamp(12px,1.5vw,16px);
+    background:var(--code);border:1px solid rgba(93,228,199,.22);border-radius:11px;
+    padding:14px 18px;margin-top:18px;color:var(--cy);white-space:pre;overflow-x:auto;line-height:1.7;}
+  .mono .hi{color:var(--gold);}.mono .dim{color:var(--sub);}.mono .a{color:var(--acc);}
+  .flowbar{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;align-items:stretch;}
+  .flowbar .box{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 14px;position:relative;}
+  .flowbar .box .n{font-size:13px;color:var(--acc);letter-spacing:1px;font-weight:700;margin-bottom:7px;}
+  .flowbar .box .d{font-size:13.5px;color:var(--sub);line-height:1.6;}
+  .flowbar .box .d b{color:var(--gold);}
+  .diagram{margin-top:2vh;flex:1;display:flex;justify-content:center;align-items:center;min-height:0;}
+  .mermaid{width:100%;display:flex;justify-content:center;align-items:center;}
+  .mermaid svg{max-width:100%;max-height:66vh;height:auto;}
+  .bar{position:fixed;left:0;top:0;height:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));z-index:30;transition:width .4s;}
+  .hud{position:fixed;bottom:22px;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px;z-index:30;}
+  .dots{display:flex;gap:7px;flex-wrap:wrap;max-width:56vw;justify-content:center;}
+  .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .3s;}
+  .dots i.on{background:var(--acc);width:24px;border-radius:5px;}
+  .nav{position:fixed;bottom:18px;right:26px;display:flex;gap:10px;z-index:30;}
+  .nav b{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s;backdrop-filter:blur(6px);}
+  .nav b:hover{border-color:var(--acc);color:var(--acc);}
+  .pageno{position:fixed;bottom:26px;left:26px;font-size:13px;color:var(--sub);letter-spacing:2px;z-index:30;}
+  .pageno b{color:var(--ink);}
+  .logo{position:fixed;top:20px;right:26px;font-size:13px;letter-spacing:2px;color:var(--sub);z-index:30;}
+  .logo b{color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="logo"><b>Reasoning State Lab</b> · 设计文档导读</div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 封面 -->
+  <section class="slide active">
+    <div class="eyebrow"><span class="dot"></span>安全研究工具 · 授权环境 · 合成 canary</div>
+    <h1>Reasoning State Lab<br><span class="grad">加密推理状态的长度旁路提取</span></h1>
+    <div class="sub">不碰任何密码学密钥，只测一条更高层的状态机是否成立：<br>
+      <span class="mono" style="display:inline-block;margin-top:12px;">opaque state <span class="a">→</span> provider rehydration <span class="a">→</span> private predicate <span class="a">→</span> new opaque-state length</span></div>
+    <div class="sign">原理 + 调用链 + 判定标准　｜　导读 · <b style="color:var(--ink)">刘思远 Leo</b></div>
+  </section>
+
+  <!-- 2 定位 + 状态机 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§1 项目定位</div>
+    <h2>它<span class="grad">不破解密码学</span>，测的是状态机</h2>
+    <div class="sub">只在自有账户、合成 canary、书面授权环境下运行。<b class="cy">不碰 AES / Fernet / AEAD 密钥</b>，而是测试大模型返回的加密推理状态（Claude <span class="mono" style="display:inline;padding:2px 6px;">thinking.signature</span> / OpenAI <span class="mono" style="display:inline;padding:2px 6px;">reasoning.encrypted_content</span>）能否被服务端「复活」进模型工作记忆。</div>
+    <div class="flowbar">
+      <div class="box"><div class="n">不透明状态</div><div class="d">opaque state：秘密只在加密推理里，明文不可见</div></div>
+      <div class="box"><div class="n">服务端复活</div><div class="d">rehydration：原样 replay 回去，模型脑中重新拥有 canary</div></div>
+      <div class="box"><div class="n">私有判定</div><div class="d">private predicate：问一个只有模型知道答案的布尔问题</div></div>
+      <div class="box"><div class="n">新状态长度</div><div class="d">new length：判定结果只通过新返回状态的长度被编码</div></div>
+    </div>
+  </section>
+
+  <!-- 3 研究问题 + 红线 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§1 核心研究问题</div>
+    <h2>五个层层递进的问题</h2>
+    <div class="list">
+      <div class="li"><span class="idx">1</span><div>加密推理状态能否在<b>不重发明文</b>的情况下被服务端复活进工作记忆？</div></div>
+      <div class="li"><span class="idx">2</span><div>复活后模型能否回答关于<b>原始秘密的精确判定</b>？</div></div>
+      <div class="li"><span class="idx">3</span><div>判定结果能否<b>只通过新返回状态的长度</b>被编码出来？</div></div>
+      <div class="li"><span class="idx">4</span><div>反复配对测量，能否<b>逐字符精确还原</b>一段随机 canary？</div></div>
+      <div class="li"><span class="idx">5</span><div>同法能否还原自然语言推理，并与同次 ground truth <b>逐字节一致</b>？</div></div>
+    </div>
+    <div class="sub"><b class="red">关键红线</b>：「成功还原 canary」<b class="red">≠</b>「破解了任意 CoT」；只有和同一次运行的原始 ground truth 逐字节比对一致，才算精确提取。</div>
+  </section>
+
+  <!-- 4 威胁模型 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§2 威胁模型</div>
+    <h2>评估者控制什么，<span class="grad">不假设什么</span></h2>
+    <div class="cards">
+      <div class="card"><div class="k">攻击方控制</div><div class="v">seed 提示词 · 合成 canary · API 账户与代理路由 · 全部 replay 请求 · 测量与存储</div></div>
+      <div class="card warnc"><div class="k">不假设掌握</div><div class="v">provider 的<b>加密密钥</b>。整个攻击建立在一个前提上：<b>服务端愿意 rehydrate 回传的 opaque state</b>。</div></div>
+    </div>
+    <div class="sub">README 诚实声明：<b class="warn">不保证远端真存在这条可利用路径</b>。本工具衡量的正是这个前提是否成立。</div>
+  </section>
+
+  <!-- 5 攻击链总览 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§3 攻击链总览</div>
+    <h2>四个环节，<span class="grad">明文里从不出现 canary</span></h2>
+    <div class="list">
+      <div class="li"><span class="idx">①</span><div><b>种 canary</b>：seed_prompt 让模型在私有推理里记住随机串，只吐固定 marker → 产出 opaque state。</div></div>
+      <div class="li"><span class="idx">②</span><div><b>rehydration</b>：把 opaque state 原样 replay 回下一个请求（原始 HTTP，不重构），模型脑中重新拥有 canary，但请求明文里没有。</div></div>
+      <div class="li"><span class="idx">③</span><div><b>私有判定 + 长度编码</b>：问一个只有模型知道答案的布尔问题 P；P 真→做 LONG 苦工，P 假→做 SHORT 苦工，可见输出永远只是固定 marker → 1 bit 泄漏进「状态长度」。</div></div>
+      <div class="li"><span class="idx">④</span><div><b>逐字符二分还原</b>：recover_* 用长度旁路预言机回答一连串二分判定，拼出完整秘密。</div></div>
+    </div>
+    <div class="sub">对应模块：<span class="mono" style="display:inline;padding:2px 8px;">prompts.py:seed_prompt → providers/*:run_oracle → prompts.py:oracle_prompt → experiments/recovery.py</span></div>
+  </section>
+
+  <!-- 6 长度信道 编码 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§4.1 长度旁路信道 · 编码</div>
+    <h2>把 1 bit 写进<span class="grad">「苦工量」</span></h2>
+    <div class="cards">
+      <div class="card"><div class="k">SHORT 分支</div><div class="v">私下验证 <b>17 + 19 = 36</b> 一次即停（极短推理）。</div></div>
+      <div class="card"><div class="k">LONG 分支</div><div class="v">私下生成递推数列 <b>u₀=11, uₙ₊₁=(7·uₙ+13) mod 997</b>，跑 long_work_units 步，每 8 步做一次反向一致性校验（很长的推理）。</div></div>
+    </div>
+    <div class="sub">不管走哪个分支，<b class="cy">可见响应永远只有那个固定 marker</b>。差异只体现在新返回的 opaque state 上——这就是信息的<b class="gold">唯一载体</b>。</div>
+  </section>
+
+  <!-- 7 长度信道 读出 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§4.2 长度旁路信道 · 读出</div>
+    <h2>成对反转编码 <span class="grad">Paired Swapped Encoding</span></h2>
+    <div class="sub">裸测长度噪声大（排队延迟、固定开销、分支措辞偏差）。对每个判定 P 发两个镜像请求（run_pair 内部还 shuffle 顺序去偏）：</div>
+    <div class="mono">请求 A (variant=true_long) : P真<span class="a">→</span>LONG,  P假<span class="a">→</span>SHORT
+请求 B (variant=true_short): P真<span class="a">→</span>SHORT, P假<span class="a">→</span>LONG
+
+取特征差  <span class="hi">D = features(A) − features(B)</span>
+  P 真 <span class="a">→</span> A 长 / B 短 <span class="a">→</span> D 明显为正
+  P 假 <span class="a">→</span> A 短 / B 长 <span class="a">→</span> D 明显为负</div>
+    <div class="sub">固定开销与系统性偏置在相减时<b class="gold">抵消</b>，只留下判定本身引起的长度差。</div>
+  </section>
+
+  <!-- 8 特征向量 + LDA -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§4.3 特征向量 · §5 统计判定</div>
+    <h2>五维特征 → <span class="grad">正则化 LDA</span> → 0/1</h2>
+    <div class="cards">
+      <div class="card"><div class="k">特征向量</div><div class="v">candidate_payload_bytes · <b>opaque_state_decoded_bytes</b> · opaque_state_chars · <b>reasoning_tokens</b> · latency_ms<br><span style="color:var(--sub)">优先用 decoded payload length 与 reasoning_tokens，不要只依赖总字符串长度。</span></div></div>
+      <div class="card"><div class="k">LDA 分类器</div><div class="v">用已知答案的判定构造<b>平衡样本</b>校准（提示词里从不出现 canary）；丢缺失率&gt;20%/近零方差维度、均值填补、标准化；加 ridge（默认 1e-3）正则防奇异；<span class="mono" style="display:inline;padding:1px 5px;">weights = pinv(Σ)@(μ1−μ0)</span>，阈值取中点。</div></div>
+    </div>
+    <div class="sub">分层 held-out 报告 AUC/accuracy；一键流水线以 <b class="gold">held-out AUC ≥ 0.95</b>（严谨研究 0.995）判定信道是否打通，不达标不允许继续全文还原。</div>
+  </section>
+
+  <!-- 9 读 1 bit -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§6.1 还原算法 · 读 1 bit</div>
+    <h2><span class="grad">_vote_predicate</span>：多数投票读一位</h2>
+    <div class="sub">对同一判定重复 <b class="gold">repeats_per_bit</b> 次（每次 = 1 对镜像 = 2 请求），多数投票；偶数次平票时再补一对决胜。</div>
+    <div class="mono">1 个可靠 bit  ≈  repeats × 2  个请求
+
+共用底座（两条链完全一致）：
+  _vote_predicate <span class="a">→</span> run_pair <span class="a">→</span> adapter.run_oracle ×2 <span class="a">→</span> predict_pair
+  区别只在<span class="hi">二分的对象</span>：字符集 / 整数区间</div>
+  </section>
+
+  <!-- 10 逐字符还原 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§6.2 逐字符还原</div>
+    <h2>二分<span class="grad">字符集</span> · 例：还原第 0 位 '3'</h2>
+    <div class="sub">判定 canary_char_in / reasoning_char_in：<span class="mono" style="display:inline;padding:1px 6px;">midpoint=(len+1)//2</span>，问「第 position 位 ∈ left ?」，16 个 hex 需 ⌈log₂16⌉=4 判定。</div>
+    <table class="tbl">
+      <tr><th>轮</th><th>候选（前）</th><th>问 left</th><th>真实答案</th><th>判定</th><th>保留</th></tr>
+      <tr><td>1</td><td>0123456789abcdef</td><td>01234567</td><td>是</td><td><b>TRUE</b></td><td>01234567</td></tr>
+      <tr><td>2</td><td>01234567</td><td>0123</td><td>是</td><td><b>TRUE</b></td><td>0123</td></tr>
+      <tr><td>3</td><td>0123</td><td>01</td><td>否</td><td>FALSE</td><td>23</td></tr>
+      <tr><td>4</td><td>23</td><td>2</td><td>否</td><td>FALSE</td><td><b>3</b></td></tr>
+    </table>
+    <div class="sub">整个过程<b class="cy">明文里从没出现 '3'，也没出现 canary</b>。</div>
+  </section>
+
+  <!-- 11 长度还原 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§6.3 长度还原</div>
+    <h2>二分<span class="grad">整数区间</span> · 例：[0,512] 找长度 300</h2>
+    <div class="sub">自然语言推理长度未知，先测长度，判定 reasoning_length_leq：<span class="mono" style="display:inline;padding:1px 6px;">midpoint=(low+high)//2</span>，问「长度 ≤ midpoint ?」，约 ⌈log₂512⌉=9 判定。</div>
+    <table class="tbl">
+      <tr><th>轮</th><th>low~high</th><th>midpoint</th><th>≤midpoint?</th><th>更新</th></tr>
+      <tr><td>1</td><td>0~512</td><td>256</td><td>否</td><td>low=257</td></tr>
+      <tr><td>2</td><td>257~512</td><td>384</td><td>是</td><td>high=384</td></tr>
+      <tr><td>3</td><td>257~384</td><td>320</td><td>是</td><td>high=320</td></tr>
+      <tr><td>4~8</td><td>…逐步收敛…</td><td>288/304/296/298</td><td>—</td><td>夹逼</td></tr>
+      <tr><td>9</td><td>299~300</td><td>299</td><td>否</td><td>low=300</td></tr>
+    </table>
+    <div class="sub">low==high==300 → <b class="gold">长度锁定</b>。</div>
+  </section>
+
+  <!-- 12 两条链对比 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§6.4 两条链对比</div>
+    <h2>同一底座，<span class="grad">不同二分对象</span></h2>
+    <table class="tbl">
+      <tr><th></th><th>字符还原</th><th>长度还原</th></tr>
+      <tr><td>二分对象</td><td><b>字符集 Σ</b></td><td><b>整数区间 [low, high]</b></td></tr>
+      <tr><td>判定</td><td>char_in：第 pos 位 ∈ left?</td><td>length_leq：长度 ≤ threshold?</td></tr>
+      <tr><td>收敛</td><td>len(candidates)==1</td><td>low == high</td></tr>
+      <tr><td>每单元判定数</td><td>⌈log₂|Σ|⌉ 每字符</td><td>⌈log₂ 范围⌉ 一次性</td></tr>
+      <tr><td>产出</td><td>一位字符 → 整串</td><td>一个整数（长度）</td></tr>
+      <tr><td>共用底座</td><td colspan="2"><b>_vote_predicate → run_pair → predict_pair</b></td></tr>
+    </table>
+  </section>
+
+  <!-- 13 时序图 字符还原 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§7.1 调用链时序图 · 字符还原</div>
+    <h2>从 1 个 bit 到<span class="grad">完整字符串</span></h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as recover_chars_by_membership
+    participant V as _vote_predicate
+    participant P as run_pair
+    participant A as ProviderAdapter
+    participant M as 远端模型
+    participant L as predict_pair / LDA
+    C->>C: candidates = alphabet
+    loop 每字符 约 log2 |Σ| 个判定
+        C->>V: 问 "第 position 位 ∈ left ?"
+        loop 投票 repeats_per_bit 次
+            V->>P: run_pair(predicate)
+            P->>A: run_oracle(true_long)
+            A->>M: 回灌 state (真→LONG)
+            M->>A: marker + 新 opaque state
+            A->>P: Observation_A
+            P->>A: run_oracle(true_short)
+            A->>M: 回灌 state (真→SHORT)
+            M->>A: marker + 新 opaque state
+            A->>P: Observation_B
+            P->>V: PairedObservation
+            V->>L: predict_pair(D = A − B)
+            L->>V: True / False
+        end
+        alt belongs_left
+            V->>C: candidates = left
+        else
+            V->>C: candidates = right
+        end
+    end
+    C->>C: len(candidates)==1 → 得到该位字符
+</pre></div>
+  </section>
+
+  <!-- 14 时序图 长度还原 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§7.2 调用链时序图 · 长度还原</div>
+    <h2>整数区间<span class="grad">二分</span></h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant R as recover_reasoning_length
+    participant V as _vote_predicate
+    participant P as run_pair
+    participant A as ProviderAdapter
+    participant M as 远端模型
+    participant L as predict_pair / LDA
+    R->>R: low, high = minimum, maximum
+    loop while low 小于 high (约 log2 范围 次)
+        R->>V: midpoint=(low+high)//2, 问 "长度 ≤ midpoint ?"
+        loop 投票 repeats_per_bit 次
+            V->>P: run_pair(predicate)
+            P->>A: run_oracle(true_long)
+            A->>M: 回灌 state (真→LONG)
+            M->>A: marker + 新 opaque state
+            A->>P: Observation_A
+            P->>A: run_oracle(true_short)
+            A->>M: 回灌 state (真→SHORT)
+            M->>A: marker + 新 opaque state
+            A->>P: Observation_B
+            P->>V: PairedObservation
+            V->>L: predict_pair(D = A − B)
+            L->>V: True / False
+        end
+        alt leq == True
+            V->>R: high = midpoint
+        else
+            V->>R: low = midpoint + 1
+        end
+    end
+    R->>R: low == high → 返回确切长度
+</pre></div>
+  </section>
+
+  <!-- 15 请求量聚合 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§7.3 聚合关系与请求量</div>
+    <h2>请求量<span class="grad">逐级放大</span></h2>
+    <div class="mono">1 次 HTTP 请求        ─┐
+                       ├─ 2 次 = 1 对镜像 (run_pair, D = A − B)
+2 次 = 1 对            ─┘
+      × repeats 次投票    <span class="a">=</span> 1 个 bit 的可靠答案
+      × ⌈log₂|Σ|⌉ 个 bit  <span class="a">=</span> 1 个字符
+      × length 个位置     <span class="a">=</span> 完整字符串
+
+上界  <span class="hi">length × ⌈log₂(alphabet_size)⌉ × repeats × 2</span></div>
+    <div class="stats">
+      <div class="stat"><div class="n">384</div><div class="l">16 位 hex canary<br>16 × 4 × 3 × 2</div></div>
+      <div class="stat"><div class="n">≈12600</div><div class="l">300 字符自然语言（字母表≈98）<br>故有 max_live_requests 硬上限</div></div>
+    </div>
+  </section>
+
+  <!-- 16 模块结构 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§8 模块结构</div>
+    <h2>各司其职的<span class="grad">模块边界</span></h2>
+    <table class="tbl">
+      <tr><th>模块</th><th>职责</th></tr>
+      <tr><td>prompts.py</td><td>seed_prompt（种 canary）、oracle_prompt（判定+长短苦工）、neutral_replay_preamble</td></tr>
+      <tr><td>providers/</td><td>compass_anthropic(/messages)、compass_openai(/responses, store:false)、mock。<b>原始 HTTP，绝不重构 opaque state</b></td></tr>
+      <tr><td>parsing/</td><td>纯观察：Base64/URL 解码、Protobuf 探测、熵统计、Fernet 外形识别。<b>不解密、不断言字段语义</b></td></tr>
+      <tr><td>stats/lda.py</td><td>成对差分 + 正则化 LDA + 分层 held-out</td></tr>
+      <tr><td>experiments/</td><td>oracle.py（run_pair/validate_marker）、recovery.py（三个 recover_*）、calibration/pipeline/baseline/factory</td></tr>
+      <tr><td>io.py / report.py</td><td>原子落盘（0600 敏感文件）、审计报告（<b>不含 canary 明文</b>）</td></tr>
+    </table>
+  </section>
+
+  <!-- 17 判定门槛 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§9 判定门槛 Gates</div>
+    <h2>五道<span class="grad">Gate</span>，层层放行</h2>
+    <table class="tbl">
+      <tr><th>Gate</th><th>内容</th></tr>
+      <tr><td>0 传输</td><td>端点可用、解析到目标快照、返回 opaque state、无隐式 SDK 重试</td></tr>
+      <tr><td>1 隔离</td><td>canary 不得出现在 oracle 明文/可见响应/工具参数/文件名；<b>唯一载体 = seed 请求 + provider 签发的 opaque state</b></td></tr>
+      <tr><td>2 长度信道</td><td>成对反转校准；含真/假两类；固定 marker；无失败观测；<b>分层 held-out AUC &gt; 门槛（建议 0.995）</b></td></tr>
+      <tr><td>3 精确还原</td><td>至少还原 <b>20 个</b>独立随机 canary；报告 exact-match 率、错误率、物理请求数、快照、控制组</td></tr>
+      <tr><td>4 自然语言</td><td>Gate 3 稳定后才可进行；只有与同次原始字节（含空白/Unicode 归一化）一致才算精确</td></tr>
+    </table>
+  </section>
+
+  <!-- 18 控制组 + 结论解读 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§10 控制组 · 结论解读对照</div>
+    <h2>观察到什么，<span class="grad">才能下什么结论</span></h2>
+    <table class="tbl">
+      <tr><th>观察到的现象</th><th>能下的结论</th></tr>
+      <tr><td>长度与 token 数相关</td><td>仅 size leakage</td></tr>
+      <tr><td>分类器能预测已知判定</td><td>存在<b>活跃的长度旁路信道</b></td></tr>
+      <tr><td>随机 canary 逐字命中</td><td><b>合成隐藏状态精确提取</b></td></tr>
+      <tr><td>自然语言「像」摘要</td><td>仅重构</td></tr>
+      <tr><td>自然语言与同次原始字节一致</td><td><b class="gold">精确推理恢复</b></td></tr>
+      <tr><td>离线拿到明文+有效 tag+密钥</td><td>密码学解密（<b class="red">本项目不做</b>）</td></tr>
+    </table>
+    <div class="sub">发表级证据需补齐完整控制矩阵：移除 state / 换 canary / 改 1 字节 / current_turn / 随机 label / 无任何先前状态 等。</div>
+  </section>
+
+  <!-- 19 合规 + 失败模式 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§11 合规边界 · §12 失败模式</div>
+    <h2><span class="grad">安全红线</span>与主要失败模式</h2>
+    <div class="cards">
+      <div class="card redc"><div class="k">合规与安全边界</div><div class="v">只测自有 key/账户/代理/日志/模型状态；自然语言还原<b>默认关闭</b>，需显式开关 + 硬上限；还原出的 canary <b>不打印、不进 REPORT.md</b>，只存 0600 的 recovery.json；报告只存 exact_match 与 sha256。</div></div>
+      <div class="card"><div class="k">主要失败模式</div><div class="v">模型不把 canary 复制进 seed 推理 · provider 隔离 replay 时不渲染先前状态 · 拿到语义但拿不到精确字符 · 长/短区分度不够 · 排队延迟主导长度特征 · 代理剥离空推理块 · 运行途中快照变化</div></div>
+    </div>
+  </section>
+
+  <!-- 20 端到端实例 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§13 端到端实例（示意数字）</div>
+    <h2>还原 <span class="grad">3f0ac1d9b8e27f64</span></h2>
+    <div class="sub">canary 16 位 hex，alphabet=0-9a-f，repeats=3，marker="OK-7F3A2C"。校准 held-out AUC=0.997（&gt;0.995），信道打通。典型单请求特征：</div>
+    <table class="tbl">
+      <tr><th>私有工作负载</th><th>opaque_state_chars</th><th>reasoning_tokens</th></tr>
+      <tr><td>SHORT（17+19=36）</td><td>≈ 1 200</td><td>≈ 40</td></tr>
+      <tr><td>LONG（递推 900 步）</td><td>≈ 4 800</td><td>≈ 950</td></tr>
+    </table>
+    <div class="mono">还原第 0 位 '3'：TRUE,TRUE,FALSE,FALSE  → 4 判定 × 6 = 24 请求
+总请求数 = 16 × 4 × 3 × 2 = <span class="hi">384</span>
+recovered = "3f0ac1d9b8e27f64"  <span class="dim">→</span> exact_match = <span class="hi">True</span>
+recovery.json(0600) 存文本+sha256+match；REPORT.md <span class="a">只写</span> exact_match:true + sha256</div>
+  </section>
+
+  <!-- 21 对照实验 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§13.5 对照实验</div>
+    <h2>证明信号<span class="grad">真来自 opaque state</span></h2>
+    <div class="sub">同一 canary，把回灌的 S0 <b class="warn">移除</b>后重跑：模型脑中已无 canary，判定退化为瞎猜。</div>
+    <table class="tbl">
+      <tr><th>现象</th><th>有正确 state</th><th>移除 state（控制组）</th></tr>
+      <tr><td>典型 |D|（chars）</td><td><b>≈ 3 600</b></td><td>≈ 0（仅噪声）</td></tr>
+      <tr><td>LDA |score|</td><td><b>≈ 6</b></td><td>≈ 0.3</td></tr>
+      <tr><td>投票</td><td>3:0 稳定</td><td>2:1 / 1:2 随机</td></tr>
+      <tr><td>held-out AUC</td><td><b>0.997</b></td><td>≈ 0.5</td></tr>
+      <tr><td>exact_match</td><td><b class="gold">True</b></td><td><b class="red">False</b></td></tr>
+    </table>
+    <div class="sub">控制组还原失败，正说明成功还原<b class="cy">依赖 opaque state 被真实 rehydrate</b>，而非提示词泄漏或猜测——把结论从「size leakage」升格到「活跃信道 + 精确提取」的关键证据。</div>
+  </section>
+
+  <!-- 22 真实数据锚定 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§14 真实数据锚定 · 天然阴性对照</div>
+    <h2>batch4 轨迹：<span class="grad">无可还原状态</span></h2>
+    <div class="sub">取自 AIS pod 上的 OpenHands teacher 蒸馏轨迹（teacher = claude-opus-4-8），instance_id = 12rambau__sepal_ui-574。三个铁证说明它根本没有可还原的隐藏状态：</div>
+    <table class="tbl">
+      <tr><th>证据</th><th>值</th><th>含义</th></tr>
+      <tr><td>usage.reasoning_tokens</td><td><b>0</b></td><td>没产生任何推理 token → 没开 extended thinking</td></tr>
+      <tr><td>provider_specific_fields</td><td><b>null</b></td><td>LiteLLM 里 Anthropic signature 的落点是空的</td></tr>
+      <tr><td>grep "signature"/"thinking"</td><td><b>0 / 0</b></td><td>195 MB 里不存在任何 signature</td></tr>
+    </table>
+    <div class="sub">唯一允许的载体在这份数据里<b class="warn">缺席</b> → 长度旁路攻击没有攻击面。<b class="cy">不是攻击失败，而是根本没有可还原的目标</b>——正是「不开 thinking 就没有 signature」的真实实例。</div>
+  </section>
+
+  <!-- 23 假设性演示 + 启示 -->
+  <section class="slide">
+    <div class="eyebrow"><span class="dot"></span>§14.3 假设性演示 · 两点启示</div>
+    <h2>若这段文本<span class="grad">是隐藏推理</span></h2>
+    <div class="sub">明确假设：Opus 4.8 的隐藏推理恰好是它这条真实输出 <span class="mono" style="display:inline;padding:1px 6px;">"failed. Let me try differently."</span>（31 字符），且 thinking 已开、signature 保留、可 rehydrate。字母表 PRINTABLE_ASCII(97)，每字符 ⌈log₂97⌉=7 判定。</div>
+    <div class="mono">长度还原：  6 判定 × 3 票 × 2 =    36 请求
+字符还原： 31 字符 × 7 × 3 × 2 = 1 302 请求
+合计 ≈ <span class="hi">1 338 请求</span>   →   exact_match = True（须逐字节比对同次 ground truth）</div>
+    <div class="cards" style="margin-top:18px;">
+      <div class="card"><div class="k">启示一</div><div class="v">攻击前提是「有加密推理状态且可 rehydrate」；真实 batch4 数据 <b>reasoning_tokens=0</b>，连原料都没有。</div></div>
+      <div class="card"><div class="k">启示二</div><div class="v">一旦前提成立，约 <b>1338 个「只问是非」</b>的请求即可在<b class="cy">全程不触碰明文</b>下逐字还原——这才是要用同次 ground truth 严格验证的核心主张。</div></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="pageno"><b id="cur">1</b> / <span id="tot">23</span></div>
+<div class="hud"><div class="dots" id="dots"></div></div>
+<div class="nav"><b id="prev">‹</b><b id="next">›</b></div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad:false, theme:'dark', securityLevel:'loose',
+    themeVariables:{fontFamily:"'JDLANGZHENGTI','PingFang SC','Microsoft YaHei',sans-serif",
+      primaryColor:'#0c1222', primaryTextColor:'#eaf0ff', primaryBorderColor:'#6ea8ff',
+      lineColor:'#6ea8ff', actorBkg:'#12203b', actorBorder:'#6ea8ff', actorTextColor:'#eaf0ff',
+      signalColor:'#93a0bd', signalTextColor:'#eaf0ff', labelBoxBkgColor:'#12203b',
+      labelBoxBorderColor:'#a78bff', labelTextColor:'#f4d58d', loopTextColor:'#5de4c7',
+      noteBkgColor:'#1a2540', noteTextColor:'#eaf0ff', sequenceNumberColor:'#04060c'},
+    sequence:{actorMargin:32, boxMargin:8, mirrorActors:false, wrap:true, width:150}
+  });
+  mermaid.run();
+
+  const slides=[...document.querySelectorAll('.slide')];
+  const dotsBox=document.getElementById('dots'),bar=document.getElementById('bar');
+  const cur=document.getElementById('cur');document.getElementById('tot').textContent=slides.length;
+  let i=0;
+  slides.forEach((_,k)=>{const d=document.createElement('i');if(k===0)d.className='on';d.onclick=()=>go(k);dotsBox.appendChild(d);});
+  const dots=[...dotsBox.children];
+  function go(n){i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';cur.textContent=i+1;}
+  document.getElementById('next').onclick=()=>go(i+1);
+  document.getElementById('prev').onclick=()=>go(i-1);
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();go(i+1);}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(i-1);}
+    if(e.key==='Home')go(0);if(e.key==='End')go(slides.length-1);});
+  addEventListener('click',e=>{if(e.target.closest('.nav,.dots'))return;
+    const x=e.clientX/innerWidth;if(x>0.62)go(i+1);else if(x<0.38)go(i-1);});
+  bar.style.width=(1/slides.length*100)+'%';
+</script>
+</body>
+</html>
